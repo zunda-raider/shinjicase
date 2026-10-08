@@ -43,7 +43,7 @@ export function evaluateSubmission(
   return {
     severity: 'ok',
     lines: [
-      'CAPTAIN「…悪くない。ただ、競合と価格の切り分けは甘い。」',
+      'CAPTAIN「…悪くない。ただ、容疑者同士の切り分けはまだ甘い。」',
       'CAPTAIN「動機をもう一段シャープにできれば OPERATION へ進める。REVISE BONUS のチャンスだ。」',
     ],
   }
