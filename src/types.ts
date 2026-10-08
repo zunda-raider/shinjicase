@@ -23,7 +23,6 @@ export interface PrimeSelection {
 export type Phase =
   | 'INTAKE'
   | 'EVIDENCE'
-  | 'PRIME_SUSPECT'
   | 'OPERATION'
   | 'WARRANT'
 
@@ -84,7 +83,8 @@ export type LinkKind = 'mul' | 'add'
 /** × のときの任意タグ：増減・生産・転換 */
 export type MechanismTag = 'increase' | 'production' | 'conversion'
 
-export interface EvidenceLink {
+/** 親ノードの「分け方」。1つの分解につき演算子は1つ。 */
+export interface Split {
   kind: LinkKind
   tag?: MechanismTag
 }
@@ -94,18 +94,28 @@ export type EvidenceNodeId = string
 export interface EvidenceNode {
   id: EvidenceNodeId
   label: string
-  /** ボード上の左上座標（px） */
-  x: number
-  y: number
   /** ルートは null */
   parentId: EvidenceNodeId | null
-  /** 親からこのノードへの糸。ルートは undefined */
-  link?: EvidenceLink
+  /** 子（左から右の順） */
+  children: EvidenceNodeId[]
+  /** 子を持つときの分け方（× or ＋）。子がなければ undefined */
+  split?: Split
 }
 
 export interface EvidenceTree {
+  version: 2
   rootId: EvidenceNodeId
   nodes: Record<EvidenceNodeId, EvidenceNode>
   /** 採番用カウンタ */
   seq: number
+}
+
+/** 自動レイアウトの結果 */
+export interface TreeLayout {
+  width: number
+  height: number
+  /** カード左上座標 */
+  positions: Record<EvidenceNodeId, { x: number; y: number }>
+  /** 兄弟の間に置く演算子（親ごと・隙間ごと） */
+  operators: { parentId: EvidenceNodeId; index: number; x: number; y: number }[]
 }

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CaptainPanel } from './components/CaptainPanel'
 import { EvidenceBoard } from './components/EvidenceBoard'
+import type { BoardMode } from './components/EvidenceBoard'
 import { IntakeMemos } from './components/IntakeMemos'
 import { PhaseNav } from './components/PhaseNav'
 import { ScoreBoard } from './components/ScoreBoard'
 import { StubPhase } from './components/StubPhase'
-import { SuspectCard } from './components/SuspectCard'
-import { SAMPLE_CASE } from './data/case'
+import { SuspectList } from './components/SuspectList'
 import { STUB_INTAKE, formatTarget } from './data/intake'
 import { PHASES } from './data/phases'
 import {
@@ -14,7 +14,14 @@ import {
   baseScore,
   evaluateSubmission,
 } from './logic/captain'
-import { createTree, isEvidenceTree, treeToCandidates } from './logic/evidenceTree'
+import {
+  MAX_PINS,
+  createTree,
+  exampleTree,
+  isEvidenceTree,
+  togglePin,
+  treeToCandidates,
+} from './logic/evidenceTree'
 import type {
   CaptainState,
   CandidateId,
@@ -25,26 +32,27 @@ import type {
 } from './types'
 import './App.css'
 
-const MAX_PRIMES = 3
-const TREE_STORAGE_KEY = 'shinjicase.evidence.v1'
+const TREE_STORAGE_KEY = 'shinjicase.evidence.v2'
+/** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
+const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
 const PHASE_TITLES: Record<Phase, string> = {
   INTAKE: '事件受理 — INTAKE',
   EVIDENCE: '捜査ボード — EVIDENCE',
-  PRIME_SUSPECT: '容疑者特定 — PRIME SUSPECT',
   OPERATION: '逮捕作戦 — OPERATION',
   WARRANT: '令状請求 — WARRANT',
 }
 
 function loadTree(rootLabel: string): EvidenceTree {
   try {
+    LEGACY_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k))
     const raw = localStorage.getItem(TREE_STORAGE_KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
       if (isEvidenceTree(parsed)) return parsed
     }
   } catch {
-    // 壊れたデータは捨てて作り直す
+    // 壊れた・互換のないデータは捨てて作り直す
   }
   return createTree(rootLabel)
 }
@@ -53,8 +61,9 @@ export default function App() {
   const intake = STUB_INTAKE
   const [phase, setPhase] = useState<Phase>('EVIDENCE')
   const [tree, setTree] = useState<EvidenceTree>(() => loadTree(intake.target.metric))
+  const [mode, setMode] = useState<BoardMode>('decompose')
 
-  const [pinned, setPinned] = useState<CandidateId[]>([])
+  const [pins, setPins] = useState<CandidateId[]>([])
   const [motives, setMotives] = useState<Record<CandidateId, string>>({})
   const [captainState, setCaptainState] = useState<CaptainState>('idle')
   const [challenge, setChallenge] = useState<ChallengeResult | null>(null)
@@ -70,49 +79,39 @@ export default function App() {
     }
   }, [tree])
 
-  /** ⅱ で作ったカードがあればそれを容疑者候補に。空ならサンプル。 */
-  const treeCandidates = useMemo(() => treeToCandidates(tree), [tree])
-  const fromBoard = treeCandidates.length > 0
+  const candidates = useMemo(() => treeToCandidates(tree), [tree])
   const caseData: CaseData = useMemo(
+    () => ({
+      id: 'evidence-tree',
+      title: `CASE FILE: ${intake.client.name} — 目標 ${formatTarget(intake.target)}`,
+      briefing: '',
+      idealPrimeCount: Math.max(1, Math.min(MAX_PINS, candidates.length)),
+      candidates,
+    }),
+    [candidates, intake],
+  )
+
+  // ツリーから消えた・空欄になったカードのピンは外れた扱い
+  const activePins = useMemo(
+    () => pins.filter((id) => candidates.some((c) => c.id === id)),
+    [pins, candidates],
+  )
+  const suspects = useMemo(
     () =>
-      fromBoard
-        ? {
-            id: 'evidence-board',
-            title: `CASE FILE: ${intake.client.name} — 目標 ${formatTarget(intake.target)}`,
-            briefing: `捜査ボードで洗い出したカード（${treeCandidates.length}枚）から、目標達成を阻む「犯人＝ボトルネック」を最大${MAX_PRIMES}名ピン留めし、動機（仮説）を記せ。`,
-            idealPrimeCount: Math.min(MAX_PRIMES, treeCandidates.length),
-            candidates: treeCandidates,
-          }
-        : SAMPLE_CASE,
-    [fromBoard, treeCandidates, intake],
+      activePins
+        .map((id) => candidates.find((c) => c.id === id))
+        .filter((c): c is NonNullable<typeof c> => !!c),
+    [activePins, candidates],
   )
-
-  // ボードからカードが消えたら、そのピンも外れた扱いにする
-  const activePinned = useMemo(
-    () => pinned.filter((id) => caseData.candidates.some((c) => c.id === id)),
-    [pinned, caseData],
-  )
-
   const selections = useMemo(
-    () =>
-      activePinned.map((id) => ({
-        candidateId: id,
-        motive: motives[id] ?? '',
-      })),
-    [activePinned, motives],
+    () => activePins.map((id) => ({ candidateId: id, motive: motives[id] ?? '' })),
+    [activePins, motives],
   )
 
   const displayScore = lastScored + reviseBonus
 
-  function togglePin(id: CandidateId) {
-    setPinned((prev) => {
-      const current = prev.filter((x) => caseData.candidates.some((c) => c.id === x))
-      if (current.includes(id)) {
-        return current.filter((x) => x !== id)
-      }
-      if (current.length >= MAX_PRIMES) return current
-      return [...current, id]
-    })
+  function handleTogglePin(id: CandidateId) {
+    setPins((prev) => togglePin(tree, prev, id))
   }
 
   function setMotive(id: CandidateId, value: string) {
@@ -120,29 +119,30 @@ export default function App() {
   }
 
   function handleSubmit() {
-    const result = evaluateSubmission(selections, caseData)
-    setChallenge(result)
+    setChallenge(evaluateSubmission(selections, caseData))
     setCaptainState('challenging')
-    const scored = baseScore(selections, caseData)
-    setLastScored(scored)
-
+    setLastScored(baseScore(selections, caseData))
     if (submittedOnce && reviseBonus === 0) {
       setReviseBonus(REVISE_BONUS)
     }
     setSubmittedOnce(true)
   }
 
-  function handleAcknowledge() {
-    setCaptainState('acknowledged')
-  }
-
-  function handleResetTree() {
-    setTree(createTree(intake.target.metric))
-    setPinned([])
+  function replaceTree(next: EvidenceTree) {
+    setTree(next)
+    setPins([])
     setMotives({})
   }
 
-  const canSubmit = activePinned.length > 0
+  function handleLoadExample() {
+    const hasWork = Object.keys(tree.nodes).length > 1
+    if (hasWork && !window.confirm('今のツリーを例（売上 = 顧客数 × 客単価 …）で置き換えますか？')) {
+      return
+    }
+    replaceTree(exampleTree(intake.target.metric))
+    setMode('decompose')
+  }
+
   const phaseInfo = PHASES.find((p) => p.id === phase)
 
   return (
@@ -158,8 +158,8 @@ export default function App() {
         <ScoreBoard
           score={displayScore}
           reviseBonus={reviseBonus}
-          pinnedCount={activePinned.length}
-          maxPins={MAX_PRIMES}
+          pinnedCount={activePins.length}
+          maxPins={MAX_PINS}
         />
       </header>
 
@@ -175,7 +175,7 @@ export default function App() {
             '予定：依頼人の調書（相談文）の曖昧な言葉をマーカーでなぞり、定義カードを書く。',
             '予定：依頼人カードで「誰からの相談か」を選ぶ。',
             '予定：目標を「指標・倍率・期限」のダイヤルで入力する（例：売上 ×1.2／3年）。',
-            'ここで決めた指標が、EVIDENCE のルート（黒カード）になります。',
+            'ここで決めた指標が、EVIDENCE のツリーの一番上（黒カード）になります。',
           ]}
           nextLabel="捜査ボードへ → EVIDENCE"
           onNext={() => setPhase('EVIDENCE')}
@@ -183,96 +183,50 @@ export default function App() {
       )}
 
       {phase === 'EVIDENCE' && (
-        <>
-          <EvidenceBoard tree={tree} onChange={setTree} onReset={handleResetTree} />
-          <div className="board__actions board__actions--outside">
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => setPhase('PRIME_SUSPECT')}
-            >
-              容疑者特定へ → PRIME SUSPECT
-            </button>
-            <span className="board__revise-hint">
-              {fromBoard
-                ? `名前を入れたカード ${treeCandidates.length} 枚が容疑者候補になります。`
-                : 'カードに名前を入れると容疑者候補になります（空ならサンプルケース）。'}
-            </span>
-          </div>
-        </>
-      )}
+        <div className="app__layout">
+          <EvidenceBoard
+            tree={tree}
+            onChange={setTree}
+            mode={mode}
+            onModeChange={setMode}
+            pins={activePins}
+            onTogglePin={handleTogglePin}
+            onReset={() => replaceTree(createTree(intake.target.metric))}
+            onLoadExample={handleLoadExample}
+          />
 
-      {phase === 'PRIME_SUSPECT' && (
-        <>
-          <p className="app__briefing">{caseData.briefing}</p>
-
-          <div className="app__layout">
-            <main className="board" aria-label="容疑者ボード">
-              <div className="board__header">
-                <h2>
-                  {fromBoard ? '捜査ボードのカード' : 'サンプルの候補カード'}
-                </h2>
-                <span className="board__hint">クリックでピン留め（最大 {MAX_PRIMES}）</span>
-              </div>
-
-              <div className="board__grid">
-                {caseData.candidates.map((c) => (
-                  <SuspectCard
-                    key={c.id}
-                    candidate={c}
-                    pinned={activePinned.includes(c.id)}
-                    motive={motives[c.id] ?? ''}
-                    disabledPin={activePinned.length >= MAX_PRIMES}
-                    onTogglePin={() => togglePin(c.id)}
-                    onMotiveChange={(v) => setMotive(c.id, v)}
-                  />
-                ))}
-              </div>
-
-              <div className="board__actions">
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  disabled={!canSubmit}
-                  onClick={handleSubmit}
-                >
-                  {submittedOnce ? '再提出 → CAPTAIN' : 'CAPTAIN に提出'}
-                </button>
-                {submittedOnce && reviseBonus === 0 && captainState !== 'idle' && (
-                  <span className="board__revise-hint">
-                    修正して再提出すると REVISE BONUS (+{REVISE_BONUS})
-                  </span>
-                )}
-                {reviseBonus > 0 && (
-                  <span className="board__revise-won">REVISE BONUS +{reviseBonus} 獲得</span>
-                )}
-                {!fromBoard && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost"
-                    onClick={() => setPhase('EVIDENCE')}
-                  >
-                    ← 捜査ボードでカードを作る
-                  </button>
-                )}
-              </div>
-            </main>
-
+          <div className="app__side">
+            <SuspectList
+              suspects={suspects}
+              maxPins={MAX_PINS}
+              motives={motives}
+              onMotiveChange={setMotive}
+              onUnpin={handleTogglePin}
+              canSubmit={activePins.length > 0}
+              submitLabel={submittedOnce ? '再提出 → CAPTAIN' : 'CAPTAIN に提出'}
+              onSubmit={handleSubmit}
+              note={
+                submittedOnce && reviseBonus === 0 && captainState !== 'idle'
+                  ? `修正して再提出すると REVISE BONUS (+${REVISE_BONUS})`
+                  : undefined
+              }
+              bonusNote={reviseBonus > 0 ? `REVISE BONUS +${reviseBonus} 獲得` : undefined}
+            />
             <CaptainPanel
               state={captainState}
               lines={challenge?.lines ?? []}
               reviseBonusAwarded={reviseBonus > 0}
-              onAcknowledge={handleAcknowledge}
+              onAcknowledge={() => setCaptainState('acknowledged')}
             />
           </div>
-        </>
+        </div>
       )}
 
       {phase === 'OPERATION' && (
         <StubPhase
           title="逮捕作戦（打ち手立案）"
           lines={[
-            '予定：容疑者（赤枠のカード）ごとに作戦カードを作って貼る。',
+            '予定：赤ピンの容疑者ごとに作戦カードを作って貼る。',
             '予定：どの容疑者にも紐づかない作戦は警告（打ち手はツリー上の箱に対応する）。',
           ]}
           nextLabel="令状請求へ → WARRANT"
@@ -291,7 +245,7 @@ export default function App() {
       )}
 
       <footer className="app__footer">
-        ケース面接モック · ⅱ EVIDENCE と ⅲ PRIME SUSPECT が動作 · ⅰ は仮置き、ⅳ・ⅴ はプレースホルダ
+        ケース面接モック · EVIDENCE（ⅱ分解 ＋ ⅲ容疑者）が動作 · ⅰ は仮置き、ⅳ・ⅴ はプレースホルダ
       </footer>
     </div>
   )

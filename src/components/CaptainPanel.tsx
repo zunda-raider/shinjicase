@@ -28,7 +28,7 @@ export function CaptainPanel({
       <div className="captain-panel__body">
         {state === 'idle' && (
           <p className="captain-panel__idle">
-            プライム容疑者を最大3名ピン留めし、動機を記入して提出せよ。こちらから質問する。
+            ツリーを分解したら「容疑者モード」でボトルネックに赤ピンを最大3本。動機を書いて提出せよ。こちらから質問する。
           </p>
         )}
 
@@ -48,7 +48,7 @@ export function CaptainPanel({
 
         {state === 'acknowledged' && (
           <p className="captain-panel__hint">
-            ピンや動機を編集して再提出できる。
+            ツリー・ピン・動機を直して再提出できる。
             {reviseBonusAwarded
               ? ' REVISE BONUS 反映済み。'
               : ' 再提出で REVISE BONUS を獲得。'}

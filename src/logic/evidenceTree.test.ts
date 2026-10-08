@@ -1,111 +1,176 @@
 import { describe, expect, it } from 'vitest'
 import {
-  BOARD_W,
   CARD_W,
   addChild,
+  addSibling,
   createTree,
-  cycleLinkTag,
+  cycleSplitTag,
+  decompose,
+  exampleTree,
   isEvidenceTree,
-  moveNode,
+  layoutTree,
   removeSubtree,
   renameNode,
-  suggestChildPos,
-  toggleLinkKind,
+  splitFormula,
+  togglePin,
+  toggleSplitKind,
   treeToCandidates,
 } from './evidenceTree'
+import type { EvidenceTree } from '../types'
 
-function sampleTree() {
-  let t = createTree('売上')
-  const a = addChild(t, t.rootId, { x: 300, y: 100 }, 'mul', '顧客数')
-  t = a.tree
-  const b = addChild(t, t.rootId, { x: 300, y: 300 }, 'mul', '顧客単価')
-  t = b.tree
-  const c = addChild(t, a.id, { x: 550, y: 50 }, 'add', '既存')
-  t = c.tree
-  const d = addChild(t, a.id, { x: 550, y: 150 }, 'add', '新規')
-  t = d.tree
-  return { t, a: a.id, b: b.id, c: c.id, d: d.id }
+function idOf(t: EvidenceTree, label: string): string {
+  const n = Object.values(t.nodes).find((x) => x.label === label)
+  if (!n) throw new Error(`no node ${label}`)
+  return n.id
 }
 
-describe('evidence tree', () => {
-  it('creates a root card from the INTAKE metric', () => {
+describe('evidence tree ops', () => {
+  it('starts with the INTAKE metric as the root', () => {
     const t = createTree('売上')
-    expect(t.nodes[t.rootId].label).toBe('売上')
-    expect(t.nodes[t.rootId].parentId).toBeNull()
+    expect(t.nodes[t.rootId]).toMatchObject({ label: '売上', parentId: null, children: [] })
   })
 
-  it('adds a blank child linked to its parent', () => {
+  it('decomposes a node into a row of blank children with one operator', () => {
     const t0 = createTree('売上')
-    const { tree, id } = addChild(t0, t0.rootId, { x: 300, y: 120 })
-    expect(tree.nodes[id]).toMatchObject({
-      label: '',
-      parentId: t0.rootId,
-      x: 300,
-      y: 120,
-      link: { kind: 'mul' },
-    })
-    // 元のツリーは変更しない
-    expect(Object.keys(t0.nodes)).toHaveLength(1)
-    // 存在しない親には付けない
-    expect(addChild(t0, 'nope', { x: 0, y: 0 }).tree).toBe(t0)
+    const { tree, ids } = decompose(t0, t0.rootId, 'mul')
+    expect(ids).toHaveLength(2)
+    expect(tree.nodes[t0.rootId].children).toEqual(ids)
+    expect(tree.nodes[t0.rootId].split).toEqual({ kind: 'mul' })
+    ids.forEach((id) => expect(tree.nodes[id]).toMatchObject({ label: '', parentId: t0.rootId }))
+    // 既に分解済みのノードは再分解しない
+    expect(decompose(tree, t0.rootId, 'add').tree).toBe(tree)
+    // 元のツリーは不変
+    expect(t0.nodes[t0.rootId].children).toEqual([])
   })
 
-  it('renames a card', () => {
-    const { t, a } = sampleTree()
-    const t2 = renameNode(t, a, '来店客数')
-    expect(t2.nodes[a].label).toBe('来店客数')
-    expect(t.nodes[a].label).toBe('顧客数')
+  it('builds the example: 売上 = 顧客数 × 客単価, 顧客数 = 既存顧客 ＋ 新規顧客', () => {
+    const t = exampleTree()
+    expect(splitFormula(t, t.rootId)).toBe('顧客数 × 客単価')
+    expect(splitFormula(t, idOf(t, '顧客数'))).toBe('既存顧客 ＋ 新規顧客')
+    expect(splitFormula(t, idOf(t, '客単価'))).toBe('')
   })
 
-  it('moves a card and clamps it inside the board', () => {
-    const { t, a } = sampleTree()
-    const t2 = moveNode(t, a, { x: 420, y: 222 })
-    expect(t2.nodes[a]).toMatchObject({ x: 420, y: 222 })
-    const t3 = moveNode(t, a, { x: 99999, y: -50 })
-    expect(t3.nodes[a]).toMatchObject({ x: BOARD_W - CARD_W, y: 0 })
+  it('adds a sibling right after the node, sharing the parent operator', () => {
+    const t = exampleTree()
+    const existing = idOf(t, '既存顧客')
+    const { tree, id } = addSibling(t, existing, '休眠顧客')
+    expect(splitFormula(tree, idOf(tree, '顧客数'))).toBe('既存顧客 ＋ 休眠顧客 ＋ 新規顧客')
+    expect(tree.nodes[id].parentId).toBe(idOf(t, '顧客数'))
+    // ルートには兄弟を作れない
+    expect(addSibling(t, t.rootId).tree).toBe(t)
+    // 末尾追加
+    const r = addChild(t, t.rootId, '購入頻度')
+    expect(splitFormula(r.tree, t.rootId)).toBe('顧客数 × 客単価 × 購入頻度')
   })
 
-  it('deletes a card together with its subtree, but never the root', () => {
-    const { t, a, b, c, d } = sampleTree()
-    const t2 = removeSubtree(t, a)
-    expect(t2.nodes[a]).toBeUndefined()
-    expect(t2.nodes[c]).toBeUndefined()
-    expect(t2.nodes[d]).toBeUndefined()
-    expect(t2.nodes[b]).toBeDefined()
+  it('renames a node', () => {
+    const t = exampleTree()
+    const id = idOf(t, '客単価')
+    expect(renameNode(t, id, '顧客単価').nodes[id].label).toBe('顧客単価')
+  })
+
+  it('toggles one operator per split and cycles × tags', () => {
+    const t = exampleTree()
+    const cust = idOf(t, '顧客数')
+    let t2 = toggleSplitKind(t, cust)
+    expect(splitFormula(t2, cust)).toBe('既存顧客 × 新規顧客')
+    expect(splitFormula(t2, t.rootId)).toBe('顧客数 × 客単価') // 他の分解には影響なし
+    t2 = cycleSplitTag(t2, cust)
+    expect(t2.nodes[cust].split).toEqual({ kind: 'mul', tag: 'increase' })
+    t2 = toggleSplitKind(t2, cust)
+    expect(t2.nodes[cust].split).toEqual({ kind: 'add' })
+    expect(cycleSplitTag(t2, cust).nodes[cust].split).toEqual({ kind: 'add' })
+  })
+
+  it('deletes a subtree; removing the last child clears the split; root is kept', () => {
+    const t = exampleTree()
+    const cust = idOf(t, '顧客数')
+    const t2 = removeSubtree(t, cust)
+    expect(t2.nodes[cust]).toBeUndefined()
+    expect(Object.values(t2.nodes).map((n) => n.label)).toEqual(['売上', '客単価'])
+    expect(t2.nodes[t.rootId].children).toEqual([idOf(t, '客単価')])
+    const t3 = removeSubtree(t2, idOf(t, '客単価'))
+    expect(t3.nodes[t.rootId].children).toEqual([])
+    expect(t3.nodes[t.rootId].split).toBeUndefined()
     expect(removeSubtree(t, t.rootId)).toBe(t)
   })
+})
 
-  it('toggles × / ＋ and cycles mechanism tags', () => {
-    const { t, a } = sampleTree()
-    let t2 = cycleLinkTag(t, a)
-    expect(t2.nodes[a].link).toEqual({ kind: 'mul', tag: 'increase' })
-    t2 = toggleLinkKind(t2, a)
-    expect(t2.nodes[a].link).toEqual({ kind: 'add' })
-    // ＋ にはタグを付けない
-    expect(cycleLinkTag(t2, a).nodes[a].link).toEqual({ kind: 'add' })
+describe('layoutTree', () => {
+  it('puts the root on top, children one row down, centered under the parent', () => {
+    const t = exampleTree()
+    const L = layoutTree(t)
+    const p = (label: string) => L.positions[idOf(t, label)]
+    expect(p('顧客数').y).toBeGreaterThan(p('売上').y)
+    expect(p('顧客数').y).toBe(p('客単価').y)
+    expect(p('既存顧客').y).toBeGreaterThan(p('顧客数').y)
+    expect(p('顧客数').x).toBeLessThan(p('客単価').x)
+    expect(p('既存顧客').x).toBeLessThan(p('新規顧客').x)
+    // 親は子の中央
+    const mid = (p('既存顧客').x + p('新規顧客').x) / 2
+    expect(Math.abs(p('顧客数').x - mid)).toBeLessThan(1)
+    // 演算子：売上の分解に1つ、顧客数の分解に1つ
+    expect(L.operators.map((o) => o.parentId).sort()).toEqual(
+      [t.rootId, idOf(t, '顧客数')].sort(),
+    )
   })
 
-  it('places a clicked thread to the right of the parent, below siblings', () => {
-    const { t, a } = sampleTree()
-    const pos = suggestChildPos(t, a)
-    expect(pos.x).toBeGreaterThan(t.nodes[a].x)
-    expect(pos.y).toBeGreaterThan(150)
+  it('never overlaps cards in the same row, even for a wide/deep tree', () => {
+    let t = exampleTree()
+    for (const label of ['既存顧客', '新規顧客', '客単価']) {
+      t = decompose(t, idOf(t, label), 'add', [`${label}A`, `${label}B`, `${label}C`]).tree
+    }
+    t = decompose(t, idOf(t, '新規顧客A'), 'mul', ['x1', 'x2']).tree
+    const L = layoutTree(t)
+    const all = Object.entries(L.positions)
+    expect(all).toHaveLength(Object.keys(t.nodes).length)
+    for (const [a, pa] of all) {
+      for (const [b, pb] of all) {
+        if (a >= b || pa.y !== pb.y) continue
+        expect(Math.abs(pa.x - pb.x)).toBeGreaterThanOrEqual(CARD_W)
+      }
+      expect(pa.x).toBeGreaterThanOrEqual(0)
+      expect(pa.x + CARD_W).toBeLessThanOrEqual(L.width)
+    }
+  })
+})
+
+describe('red pins on the tree', () => {
+  it('pins up to 3 named non-root nodes and toggles off', () => {
+    const t = exampleTree()
+    let pins: string[] = []
+    pins = togglePin(t, pins, t.rootId)
+    expect(pins).toEqual([]) // ルート不可
+    for (const l of ['既存顧客', '新規顧客', '客単価', '顧客数']) {
+      pins = togglePin(t, pins, idOf(t, l))
+    }
+    expect(pins).toHaveLength(3)
+    expect(pins).not.toContain(idOf(t, '顧客数'))
+    pins = togglePin(t, pins, idOf(t, '客単価'))
+    expect(pins).toHaveLength(2)
+    // 空欄カードには刺せない
+    const blank = addSibling(t, idOf(t, '客単価'))
+    expect(togglePin(blank.tree, [], blank.id)).toEqual([])
+    // 削除済みノードのピンは外れる
+    const gone = removeSubtree(t, idOf(t, '顧客数'))
+    expect(togglePin(gone, pins, idOf(t, '客単価'))).toEqual([idOf(t, '客単価')])
   })
 
-  it('converts named non-root cards into PRIME SUSPECT candidates (leaves first)', () => {
-    const { t, a, c } = sampleTree()
-    const blank = addChild(t, a, { x: 600, y: 400 }).tree
-    const cands = treeToCandidates(blank)
-    expect(cands.map((x) => x.title)).not.toContain('売上')
-    expect(cands.map((x) => x.title)).not.toContain('')
-    expect(cands).toHaveLength(4)
-    expect(cands[cands.length - 1].id).toBe(a) // 中間ノードは後ろ
-    expect(cands.find((x) => x.id === c)?.summary).toBe('経路：売上 › 顧客数 › 既存')
+  it('lists named non-root nodes as CAPTAIN candidates', () => {
+    const t = exampleTree()
+    expect(treeToCandidates(t).map((c) => c.title)).toEqual([
+      '顧客数',
+      '既存顧客',
+      '新規顧客',
+      '客単価',
+    ])
   })
+})
 
-  it('validates persisted data', () => {
-    expect(isEvidenceTree(createTree('売上'))).toBe(true)
-    expect(isEvidenceTree({ foo: 1 })).toBe(false)
+describe('persistence', () => {
+  it('accepts v2 trees and rejects old/invalid data', () => {
+    expect(isEvidenceTree(exampleTree())).toBe(true)
+    expect(isEvidenceTree({ rootId: 'root', seq: 0, nodes: { root: { label: 'x' } } })).toBe(false)
     expect(isEvidenceTree(null)).toBe(false)
   })
 })
