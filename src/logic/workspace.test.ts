@@ -108,17 +108,34 @@ describe('global red pins across sheets', () => {
 
 describe('migration', () => {
   it('moves an old single tree (v2) into 切り口1', () => {
-    const ws = migrateWorkspace(null, exampleTree('売上'), '売上')!
+    const ws = migrateWorkspace({ v2: exampleTree('売上') }, '売上')!
     expect(ws.sheets).toHaveLength(1)
     expect(ws.sheets[0].name).toBe('切り口1')
     expect(splitFormula(ws.sheets[0].tree, 'root')).toBe('顧客数 × 客単価')
   })
 
-  it('prefers v3, fixes a dangling active sheet, rejects garbage', () => {
-    const v3 = { ...exampleWorkspace('売上'), activeSheetId: 'zzz' }
-    const ws = migrateWorkspace(v3, createTree('売上'), '売上')!
+  it('upgrades v3 (sheets without measures) to v4 with empty measures', () => {
+    const ex = exampleWorkspace('売上')
+    const v3 = {
+      version: 3,
+      seq: ex.seq,
+      activeSheetId: 's2',
+      sheets: ex.sheets.map(({ id, name, tree }) => ({ id, name, tree })),
+    }
+    const ws = migrateWorkspace({ v3 }, '売上')!
+    expect(ws.version).toBe(4)
+    expect(ws.activeSheetId).toBe('s2')
+    expect(ws.sheets.map((s) => s.name)).toEqual(['顧客数×単価', '店舗数×店舗あたり売上'])
+    expect(ws.sheets.every((s) => Object.keys(s.measures).length === 0 && s.measureSeq === 0)).toBe(true)
+    // v3 そのものは v4 として扱わない
+    expect(migrateWorkspace({ v4: v3 }, '売上')).toBeNull()
+  })
+
+  it('prefers v4, fixes a dangling active sheet, rejects garbage', () => {
+    const v4 = { ...exampleWorkspace('売上'), activeSheetId: 'zzz' }
+    const ws = migrateWorkspace({ v4, v2: createTree('売上') }, '売上')!
     expect(ws.sheets).toHaveLength(2)
     expect(ws.activeSheetId).toBe('s1')
-    expect(migrateWorkspace({ version: 3, sheets: [] }, { foo: 1 }, '売上')).toBeNull()
+    expect(migrateWorkspace({ v4: { version: 4, sheets: [] }, v2: { foo: 1 } }, '売上')).toBeNull()
   })
 })

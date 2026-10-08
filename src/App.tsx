@@ -3,7 +3,9 @@ import { CaptainPanel } from './components/CaptainPanel'
 import { EvidenceBoard } from './components/EvidenceBoard'
 import type { BoardMode } from './components/EvidenceBoard'
 import { IntakeMemos } from './components/IntakeMemos'
+import { OperationPhase } from './components/OperationPhase'
 import { PhaseNav } from './components/PhaseNav'
+import { PhaseSteps } from './components/PhaseSteps'
 import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
 import { StubPhase } from './components/StubPhase'
@@ -16,19 +18,24 @@ import {
   evaluateSubmission,
 } from './logic/captain'
 import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
+import { isSuspectState } from './logic/operation'
+import type { SuspectState } from './logic/operation'
 import {
   activeSheet,
+  addMeasure,
   addSheet,
   createWorkspace,
   exampleWorkspace,
   migrateWorkspace,
   parsePinKey,
   pinKey,
+  removeMeasure,
   removeSheet,
   renameSheet,
   selectSheet,
   syncRootLabel,
   toggleWorkspacePin,
+  updateMeasure,
   updateSheetTree,
   workspaceCandidates,
 } from './logic/workspace'
@@ -45,9 +52,13 @@ import type {
 } from './types'
 import './App.css'
 
-const WORKSPACE_STORAGE_KEY = 'shinjicase.evidence.v3'
-/** v2 = 単一ツリー（切り口1 に移行して削除） */
+/** v4 = 切り口（シート）＋施策 */
+const WORKSPACE_STORAGE_KEY = 'shinjicase.evidence.v4'
+/** v3 = 切り口のみ（施策なし）、v2 = 単一ツリー。読み込んだら v4 に移行して削除 */
+const V3_STORAGE_KEY = 'shinjicase.evidence.v3'
 const V2_STORAGE_KEY = 'shinjicase.evidence.v2'
+/** 赤ピン＋動機 */
+const SUSPECT_STORAGE_KEY = 'shinjicase.suspects.v1'
 /** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
 const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
@@ -70,13 +81,26 @@ function readJson(key: string): unknown {
 function loadWorkspace(metric: string): EvidenceWorkspace {
   try {
     LEGACY_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k))
-    const ws = migrateWorkspace(readJson(WORKSPACE_STORAGE_KEY), readJson(V2_STORAGE_KEY), metric)
+    const ws = migrateWorkspace(
+      {
+        v4: readJson(WORKSPACE_STORAGE_KEY),
+        v3: readJson(V3_STORAGE_KEY),
+        v2: readJson(V2_STORAGE_KEY),
+      },
+      metric,
+    )
+    localStorage.removeItem(V3_STORAGE_KEY)
     localStorage.removeItem(V2_STORAGE_KEY)
     if (ws) return ws
   } catch {
     // 壊れた・互換のないデータは捨てて作り直す
   }
   return createWorkspace(metric)
+}
+
+function loadSuspects(): SuspectState {
+  const v = readJson(SUSPECT_STORAGE_KEY)
+  return isSuspectState(v) ? v : { pins: [], motives: {} }
 }
 
 export default function App() {
@@ -86,8 +110,9 @@ export default function App() {
   const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() => loadWorkspace(metric))
   const [mode, setMode] = useState<BoardMode>('decompose')
 
-  const [pins, setPins] = useState<CandidateId[]>([])
-  const [motives, setMotives] = useState<Record<CandidateId, string>>({})
+  const [initialSuspects] = useState(loadSuspects)
+  const [pins, setPins] = useState<CandidateId[]>(initialSuspects.pins)
+  const [motives, setMotives] = useState<Record<CandidateId, string>>(initialSuspects.motives)
   const [captainState, setCaptainState] = useState<CaptainState>('idle')
   const [challenge, setChallenge] = useState<ChallengeResult | null>(null)
   const [submittedOnce, setSubmittedOnce] = useState(false)
@@ -101,6 +126,14 @@ export default function App() {
       // 保存できなくても動作は続ける
     }
   }, [workspace])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SUSPECT_STORAGE_KEY, JSON.stringify({ pins, motives }))
+    } catch {
+      // 保存できなくても動作は続ける
+    }
+  }, [pins, motives])
 
   // ルートは常に ⅰ の指標（INTAKE が変われば全切り口のルートも変わる）
   const ws = useMemo(() => syncRootLabel(workspace, metric), [workspace, metric])
@@ -163,6 +196,12 @@ export default function App() {
 
   function setTree(next: EvidenceTree) {
     setWorkspace((prev) => updateSheetTree(prev, sheet.id, next))
+  }
+
+  function handleAddMeasure(nodeId: EvidenceNodeId, after?: string): string {
+    const r = addMeasure(ws, sheet.id, nodeId, '', after)
+    if (r.id) setWorkspace(r.ws)
+    return r.id
   }
 
   function handleRemoveSheet(id: SheetId) {
@@ -244,8 +283,6 @@ export default function App() {
             '予定：目標を「指標・倍率・期限」のダイヤルで入力する（例：売上 ×1.2／3年）。',
             'ここで決めた指標が、EVIDENCE のすべての切り口のツリーの一番上（黒カード）になります。',
           ]}
-          nextLabel="捜査ボードへ → EVIDENCE"
-          onNext={() => setPhase('EVIDENCE')}
         />
       )}
 
@@ -303,14 +340,18 @@ export default function App() {
       )}
 
       {phase === 'OPERATION' && (
-        <StubPhase
-          title="逮捕作戦（打ち手立案）"
-          lines={[
-            '予定：赤ピンの容疑者ごとに作戦カードを作って貼る。',
-            '予定：どの容疑者にも紐づかない作戦は警告（打ち手はツリー上の箱に対応する）。',
-          ]}
-          nextLabel="令状請求へ → WARRANT"
-          onNext={() => setPhase('WARRANT')}
+        <OperationPhase
+          ws={ws}
+          sheet={sheet}
+          onSelectSheet={(id) => setWorkspace((prev) => selectSheet(prev, id))}
+          pins={activePins}
+          onAddMeasure={handleAddMeasure}
+          onUpdateMeasure={(nodeId, id, text) =>
+            setWorkspace((prev) => updateMeasure(prev, sheet.id, nodeId, id, text))
+          }
+          onRemoveMeasure={(nodeId, id) =>
+            setWorkspace((prev) => removeMeasure(prev, sheet.id, nodeId, id))
+          }
         />
       )}
 
@@ -324,8 +365,10 @@ export default function App() {
         />
       )}
 
+      <PhaseSteps active={phase} onSelect={setPhase} />
+
       <footer className="app__footer">
-        ケース面接モック · EVIDENCE（ⅱ分解 ＋ ⅲ容疑者）が動作 · ⅰ は仮置き、ⅳ・ⅴ はプレースホルダ
+        ケース面接モック · EVIDENCE（ⅱ分解 ＋ ⅲ容疑者）と OPERATION（ⅳ作戦）が動作 · ⅰ は仮置き、ⅴ はプレースホルダ
       </footer>
     </div>
   )

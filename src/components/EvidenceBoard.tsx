@@ -13,11 +13,13 @@ import {
   cycleSplitTag,
   decompose,
   layoutTree,
+  numberTree,
   removeSubtree,
   renameNode,
   toggleSplitKind,
 } from '../logic/evidenceTree'
 import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
+import { TreeThreads } from './TreeThreads'
 
 export type BoardMode = 'decompose' | 'suspect'
 
@@ -53,6 +55,7 @@ export function EvidenceBoard({
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
 
   const layout = useMemo(() => layoutTree(tree), [tree])
+  const numbers = useMemo(() => numberTree(tree), [tree])
   const nodes = Object.values(tree.nodes)
   const isDecompose = mode === 'decompose'
   const activeEditing = isDecompose ? editingId : null
@@ -160,7 +163,7 @@ export function EvidenceBoard({
       <p className="evidence__help">
         {isDecompose ? (
           <>
-            上のタブは同じ指標の別の切り口（ダブルクリックで名前変更）。カードの <b>× 分解</b>（仕組み）／<b>＋ 分解</b>（内訳）で下の段を作り、名前を手で入力（Enter 確定、
+            上のタブは同じ指標の別の切り口（タブの ✎ かダブルクリックで名前変更）。カードの番号は OPERATION の作戦カードと対応。カードの <b>× 分解</b>（仕組み）／<b>＋ 分解</b>（内訳）で下の段を作り、名前を手で入力（Enter 確定、
             <b>Tab で右隣へ（最後なら要素を追加）</b>）。<b>＋要素</b> で同じ分解に要素を足す。兄弟の間の演算子クリックで × ⇄ ＋、
             × の下の小札で 増減・生産・転換。ダブルクリックで名前変更、✕ か Delete キーで子ごと削除。どこまで分けるかは自由。
           </>
@@ -182,34 +185,7 @@ export function EvidenceBoard({
             if (e.target === e.currentTarget) setSelectedId(null)
           }}
         >
-          <svg
-            className="evidence__threads"
-            width={layout.width}
-            height={layout.height}
-            aria-hidden="true"
-          >
-            {nodes.map((n) => {
-              const kids = n.children.filter((c) => layout.positions[c])
-              const p = layout.positions[n.id]
-              if (!p || kids.length === 0) return null
-              const px = p.x + CARD_W / 2
-              const midY = p.y + CARD_H + V_GAP / 2
-              const xs = kids.map((c) => layout.positions[c].x + CARD_W / 2)
-              const childTop = layout.positions[kids[0]].y
-              const d = [
-                `M ${px} ${p.y + CARD_H} V ${midY}`,
-                `M ${Math.min(...xs, px)} ${midY} H ${Math.max(...xs, px)}`,
-                ...xs.map((x) => `M ${x} ${midY} V ${childTop}`),
-              ].join(' ')
-              return (
-                <path
-                  key={n.id}
-                  d={d}
-                  className={`evidence__thread evidence__thread--${n.split?.kind ?? 'mul'}`}
-                />
-              )
-            })}
-          </svg>
+          <TreeThreads tree={tree} layout={layout} />
 
           {nodes.map((n) => {
             const p = layout.positions[n.id]
@@ -247,6 +223,11 @@ export function EvidenceBoard({
                     📌<span className="evidence-card__pin-no">{pinNo}</span>
                   </span>
                 )}
+                {!isRoot && numbers[n.id] && (
+                  <span className="evidence-card__no" title="番号（OPERATION の作戦カードと対応）">
+                    {numbers[n.id]}
+                  </span>
+                )}
                 {isRoot && (
                   <span className="evidence-card__tag" title="ⅰ INTAKE の指標（全切り口で共通・ここでは編集不可）">
                     ⅰ の指標
@@ -265,6 +246,8 @@ export function EvidenceBoard({
                     onChange={(e) => onChange(renameNode(tree, n.id, e.target.value))}
                     onBlur={() => setEditingId((cur) => (cur === n.id ? null : cur))}
                     onKeyDown={(e) => {
+                      // 日本語入力の変換確定（IME）の Enter/Tab は無視
+                      if (e.nativeEvent.isComposing) return
                       if (e.key === 'Enter' || e.key === 'Escape') {
                         e.preventDefault()
                         setEditingId(null)

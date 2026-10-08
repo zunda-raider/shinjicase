@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { EvidenceSheet, SheetId } from '../types'
 
 interface Props {
@@ -23,9 +23,25 @@ export function SheetTabs({
 }: Props) {
   const [editing, setEditing] = useState<SheetId | null>(null)
   const [draft, setDraft] = useState('')
+  /** Enter/Esc の後に blur が来ても二重に処理しない */
+  const doneRef = useRef(false)
 
+  function startEdit(s: EvidenceSheet) {
+    doneRef.current = false
+    setDraft(s.name)
+    setEditing(s.id)
+  }
+
+  /** 確定（空の名前は無視して元の名前のまま） */
   function commit() {
-    if (editing) onRename(editing, draft)
+    if (doneRef.current) return
+    doneRef.current = true
+    if (editing && draft.trim()) onRename(editing, draft)
+    setEditing(null)
+  }
+
+  function cancel() {
+    doneRef.current = true
     setEditing(null)
   }
 
@@ -41,12 +57,9 @@ export function SheetTabs({
             role="tab"
             aria-selected={active}
             data-sheet={s.name}
-            title="クリックで切替・ダブルクリックで名前変更"
+            title="クリックで切替・ダブルクリックか ✎ で名前変更"
             onClick={() => onSelect(s.id)}
-            onDoubleClick={() => {
-              setDraft(s.name)
-              setEditing(s.id)
-            }}
+            onDoubleClick={() => startEdit(s)}
           >
             {editing === s.id ? (
               <input
@@ -60,12 +73,27 @@ export function SheetTabs({
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={commit}
                 onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing) return
                   if (e.key === 'Enter') commit()
-                  if (e.key === 'Escape') setEditing(null)
+                  if (e.key === 'Escape') cancel()
                 }}
               />
             ) : (
               <span className="sheet-tab__name">{s.name}</span>
+            )}
+            {editing !== s.id && (
+              <button
+                type="button"
+                className="sheet-tab__edit"
+                aria-label={`${s.name} の名前を変更`}
+                title="名前を変更"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  startEdit(s)
+                }}
+              >
+                ✎
+              </button>
             )}
             {pins > 0 && (
               <span className="sheet-tab__pins" title={`赤ピン ${pins}`}>

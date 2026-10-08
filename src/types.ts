@@ -126,15 +126,25 @@ export interface TreeLayout {
 
 export type SheetId = string
 
+/** ⅳ 打ち手（施策）。ツリーのノードにぶら下がる。 */
+export interface Measure {
+  id: string
+  text: string
+}
+
 /** 1枚のシート = 1つの切り口（例：顧客数×単価）。ルートは全シート共通で ⅰ の指標。 */
 export interface EvidenceSheet {
   id: SheetId
   name: string
   tree: EvidenceTree
+  /** ノードID → 施策（番号ではなくIDで持つので番号が振り直されても安全） */
+  measures: Record<EvidenceNodeId, Measure[]>
+  /** 施策ID採番用 */
+  measureSeq: number
 }
 
 export interface EvidenceWorkspace {
-  version: 3
+  version: 4
   sheets: EvidenceSheet[]
   activeSheetId: SheetId
   /** シート採番用 */

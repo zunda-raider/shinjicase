@@ -1,12 +1,10 @@
 interface Props {
   title: string
   lines: string[]
-  nextLabel?: string
-  onNext?: () => void
 }
 
 /** 未実装フェーズのプレースホルダ */
-export function StubPhase({ title, lines, nextLabel, onNext }: Props) {
+export function StubPhase({ title, lines }: Props) {
   return (
     <main className="board stub-phase" aria-label={title}>
       <div className="board__header">
@@ -18,13 +16,6 @@ export function StubPhase({ title, lines, nextLabel, onNext }: Props) {
           <li key={i}>{l}</li>
         ))}
       </ul>
-      {onNext && nextLabel && (
-        <div className="board__actions">
-          <button type="button" className="btn btn--primary" onClick={onNext}>
-            {nextLabel}
-          </button>
-        </div>
-      )}
     </main>
   )
 }

@@ -310,6 +310,24 @@ export function togglePin(
   return [...current, id]
 }
 
+/* ------------------------------------------------------------------ */
+/* 番号（ルートは番号なし、子 1, 2 / 孫 1-1, 1-2 …）                    */
+/* ------------------------------------------------------------------ */
+
+export function numberTree(tree: EvidenceTree): Record<EvidenceNodeId, string> {
+  const out: Record<EvidenceNodeId, string> = {}
+  const walk = (id: EvidenceNodeId, prefix: string) => {
+    const n = tree.nodes[id]
+    if (!n) return
+    out[id] = prefix
+    n.children
+      .filter((c) => tree.nodes[c])
+      .forEach((c, i) => walk(c, prefix ? `${prefix}-${i + 1}` : `${i + 1}`))
+  }
+  walk(tree.rootId, '')
+  return out
+}
+
 /** ルートからのパス（ラベル列） */
 export function pathLabels(tree: EvidenceTree, id: EvidenceNodeId): string[] {
   const out: string[] = []
