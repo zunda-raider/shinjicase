@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   CARD_H,
   CARD_W,
@@ -25,8 +26,13 @@ interface Props {
   onChange: (tree: EvidenceTree) => void
   mode: BoardMode
   onModeChange: (mode: BoardMode) => void
-  pins: EvidenceNodeId[]
+  /** このシートのノードID → 全体での赤ピン番号（1始まり） */
+  pinNumbers: Record<EvidenceNodeId, number>
+  /** 全シート合計の赤ピン数 */
+  totalPins: number
   onTogglePin: (id: EvidenceNodeId) => void
+  /** シートのタブ（ボードの上に出す） */
+  tabs?: ReactNode
   onReset: () => void
   onLoadExample: () => void
 }
@@ -36,10 +42,12 @@ export function EvidenceBoard({
   onChange,
   mode,
   onModeChange,
-  pins,
+  pinNumbers,
+  totalPins,
   onTogglePin,
   onReset,
   onLoadExample,
+  tabs,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
@@ -126,7 +134,7 @@ export function EvidenceBoard({
               onModeChange('suspect')
             }}
           >
-            📌 容疑者モード（赤ピン {pins.length}/{MAX_PINS}）
+            📌 容疑者モード（赤ピン {totalPins}/{MAX_PINS}）
           </button>
         </div>
         <div className="evidence__tools">
@@ -137,7 +145,7 @@ export function EvidenceBoard({
             type="button"
             className="btn btn--ghost evidence__small"
             onClick={() => {
-              if (window.confirm('捜査ボードを初期状態（ルートだけ）に戻しますか？')) {
+              if (window.confirm('この切り口を初期状態（ルートだけ）に戻しますか？')) {
                 setSelectedId(null)
                 setEditingId(null)
                 onReset()
@@ -152,17 +160,19 @@ export function EvidenceBoard({
       <p className="evidence__help">
         {isDecompose ? (
           <>
-            カードの <b>× 分解</b>（仕組み）／<b>＋ 分解</b>（内訳）で下の段を作り、名前を手で入力（Enter 確定、
+            上のタブは同じ指標の別の切り口（ダブルクリックで名前変更）。カードの <b>× 分解</b>（仕組み）／<b>＋ 分解</b>（内訳）で下の段を作り、名前を手で入力（Enter 確定、
             <b>Tab で右隣へ（最後なら要素を追加）</b>）。<b>＋要素</b> で同じ分解に要素を足す。兄弟の間の演算子クリックで × ⇄ ＋、
             × の下の小札で 増減・生産・転換。ダブルクリックで名前変更、✕ か Delete キーで子ごと削除。どこまで分けるかは自由。
           </>
         ) : (
           <>
-            ボトルネックだと思うカードをクリックして <b>赤ピン</b>（最大 {MAX_PINS}）。右の欄に動機を一行ずつ書いて
+            ボトルネックだと思うカードをクリックして <b>赤ピン</b>（全切り口の合計で最大 {MAX_PINS}）。右の欄に動機を一行ずつ書いて
             CAPTAIN に提出。もう一度クリックでピンを外す。名前が空のカードとルートには刺せない。
           </>
         )}
       </p>
+
+      {tabs}
 
       <div className="evidence__scroll">
         <div
@@ -206,8 +216,8 @@ export function EvidenceBoard({
             if (!p) return null
             const isRoot = n.id === tree.rootId
             const isEditing = activeEditing === n.id
-            const pinIndex = pins.indexOf(n.id)
-            const pinned = pinIndex >= 0
+            const pinNo = pinNumbers[n.id]
+            const pinned = pinNo !== undefined
             const pinnable = canPin(tree, n.id)
             return (
               <div
@@ -218,7 +228,7 @@ export function EvidenceBoard({
                   isDecompose && selectedId === n.id ? 'is-selected' : '',
                   !n.label.trim() ? 'is-blank' : '',
                   pinned ? 'is-pinned' : '',
-                  !isDecompose && pinnable && !pinned && pins.length < MAX_PINS
+                  !isDecompose && pinnable && !pinned && totalPins < MAX_PINS
                     ? 'is-pinnable'
                     : '',
                 ]
@@ -229,15 +239,19 @@ export function EvidenceBoard({
                 data-label={n.label}
                 onClick={() => handleCardClick(n.id)}
                 onDoubleClick={() => {
-                  if (isDecompose) startEdit(n.id)
+                  if (isDecompose && !isRoot) startEdit(n.id)
                 }}
               >
                 {pinned && (
-                  <span className="evidence-card__redpin" aria-label={`容疑者 ${pinIndex + 1}`}>
-                    📌<span className="evidence-card__pin-no">{pinIndex + 1}</span>
+                  <span className="evidence-card__redpin" aria-label={`容疑者 ${pinNo}`}>
+                    📌<span className="evidence-card__pin-no">{pinNo}</span>
                   </span>
                 )}
-                {isRoot && <span className="evidence-card__tag">ⅰ の指標</span>}
+                {isRoot && (
+                  <span className="evidence-card__tag" title="ⅰ INTAKE の指標（全切り口で共通・ここでは編集不可）">
+                    ⅰ の指標
+                  </span>
+                )}
 
                 {isEditing ? (
                   <input
@@ -301,7 +315,7 @@ export function EvidenceBoard({
                   </div>
                 )}
 
-                {isDecompose && !isEditing && (
+                {isDecompose && !isEditing && !isRoot && (
                   <button
                     type="button"
                     className="evidence-card__edit"

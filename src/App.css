@@ -932,3 +932,92 @@
 .suspect-list__submit {
   align-self: flex-start;
 }
+
+/* Sheet tabs (切り口) */
+.sheet-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.25rem;
+  margin-bottom: -1px;
+}
+
+.sheet-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(30, 20, 12, 0.7);
+  border: 1px solid #2a1a10;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  color: #b0a080;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sheet-tab:hover {
+  color: #f0e0c0;
+}
+
+.sheet-tab.is-active {
+  background: #6b4a32;
+  color: #fff5d6;
+  padding-top: 0.45rem;
+}
+
+.sheet-tab__input {
+  width: 11em;
+  font: inherit;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid #c62828;
+  background: #fffdf5;
+  color: #2a2010;
+  border-radius: 2px;
+}
+
+.sheet-tab__pins {
+  font-size: 0.68rem;
+  color: #ff8a80;
+}
+
+.sheet-tab__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  font-size: 0.68rem;
+  padding: 0 0.1rem;
+  cursor: pointer;
+}
+
+.sheet-tab__close:hover {
+  opacity: 1;
+  color: #ff5252;
+}
+
+
+.sheet-tabs__add {
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  margin-left: 0.25rem;
+  border: 1px dashed #8a6a50;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  background: transparent;
+  color: #d8c8a0;
+  cursor: pointer;
+}
+
+.sheet-tabs__add:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.evidence__scroll {
+  border-top-left-radius: 0;
+}

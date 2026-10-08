@@ -5,6 +5,7 @@ import type { BoardMode } from './components/EvidenceBoard'
 import { IntakeMemos } from './components/IntakeMemos'
 import { PhaseNav } from './components/PhaseNav'
 import { ScoreBoard } from './components/ScoreBoard'
+import { SheetTabs } from './components/SheetTabs'
 import { StubPhase } from './components/StubPhase'
 import { SuspectList } from './components/SuspectList'
 import { STUB_INTAKE, formatTarget } from './data/intake'
@@ -14,25 +15,39 @@ import {
   baseScore,
   evaluateSubmission,
 } from './logic/captain'
+import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
 import {
-  MAX_PINS,
-  createTree,
-  exampleTree,
-  isEvidenceTree,
-  togglePin,
-  treeToCandidates,
-} from './logic/evidenceTree'
+  activeSheet,
+  addSheet,
+  createWorkspace,
+  exampleWorkspace,
+  migrateWorkspace,
+  parsePinKey,
+  pinKey,
+  removeSheet,
+  renameSheet,
+  selectSheet,
+  syncRootLabel,
+  toggleWorkspacePin,
+  updateSheetTree,
+  workspaceCandidates,
+} from './logic/workspace'
 import type {
   CaptainState,
   CandidateId,
   CaseData,
   ChallengeResult,
+  EvidenceNodeId,
   EvidenceTree,
+  EvidenceWorkspace,
   Phase,
+  SheetId,
 } from './types'
 import './App.css'
 
-const TREE_STORAGE_KEY = 'shinjicase.evidence.v2'
+const WORKSPACE_STORAGE_KEY = 'shinjicase.evidence.v3'
+/** v2 = 単一ツリー（切り口1 に移行して削除） */
+const V2_STORAGE_KEY = 'shinjicase.evidence.v2'
 /** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
 const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
@@ -43,24 +58,32 @@ const PHASE_TITLES: Record<Phase, string> = {
   WARRANT: '令状請求 — WARRANT',
 }
 
-function loadTree(rootLabel: string): EvidenceTree {
+function readJson(key: string): unknown {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as unknown) : null
+  } catch {
+    return null
+  }
+}
+
+function loadWorkspace(metric: string): EvidenceWorkspace {
   try {
     LEGACY_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k))
-    const raw = localStorage.getItem(TREE_STORAGE_KEY)
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw)
-      if (isEvidenceTree(parsed)) return parsed
-    }
+    const ws = migrateWorkspace(readJson(WORKSPACE_STORAGE_KEY), readJson(V2_STORAGE_KEY), metric)
+    localStorage.removeItem(V2_STORAGE_KEY)
+    if (ws) return ws
   } catch {
     // 壊れた・互換のないデータは捨てて作り直す
   }
-  return createTree(rootLabel)
+  return createWorkspace(metric)
 }
 
 export default function App() {
   const intake = STUB_INTAKE
   const [phase, setPhase] = useState<Phase>('EVIDENCE')
-  const [tree, setTree] = useState<EvidenceTree>(() => loadTree(intake.target.metric))
+  const metric = intake.target.metric
+  const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() => loadWorkspace(metric))
   const [mode, setMode] = useState<BoardMode>('decompose')
 
   const [pins, setPins] = useState<CandidateId[]>([])
@@ -73,13 +96,18 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(TREE_STORAGE_KEY, JSON.stringify(tree))
+      localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(workspace))
     } catch {
       // 保存できなくても動作は続ける
     }
-  }, [tree])
+  }, [workspace])
 
-  const candidates = useMemo(() => treeToCandidates(tree), [tree])
+  // ルートは常に ⅰ の指標（INTAKE が変われば全切り口のルートも変わる）
+  const ws = useMemo(() => syncRootLabel(workspace, metric), [workspace, metric])
+  const sheet = activeSheet(ws)
+  const tree = sheet.tree
+
+  const candidates = useMemo(() => workspaceCandidates(ws), [ws])
   const caseData: CaseData = useMemo(
     () => ({
       id: 'evidence-tree',
@@ -91,7 +119,7 @@ export default function App() {
     [candidates, intake],
   )
 
-  // ツリーから消えた・空欄になったカードのピンは外れた扱い
+  // ツリー・シートから消えた／空欄になったカードのピンは外れた扱い
   const activePins = useMemo(
     () => pins.filter((id) => candidates.some((c) => c.id === id)),
     [pins, candidates],
@@ -110,8 +138,39 @@ export default function App() {
 
   const displayScore = lastScored + reviseBonus
 
-  function handleTogglePin(id: CandidateId) {
-    setPins((prev) => togglePin(tree, prev, id))
+  /** このシートのノード → 全体のピン番号 */
+  const pinNumbers = useMemo(() => {
+    const out: Record<EvidenceNodeId, number> = {}
+    activePins.forEach((key, i) => {
+      const { sheetId, nodeId } = parsePinKey(key)
+      if (sheetId === sheet.id) out[nodeId] = i + 1
+    })
+    return out
+  }, [activePins, sheet.id])
+
+  const pinCounts = useMemo(() => {
+    const out: Record<SheetId, number> = {}
+    activePins.forEach((key) => {
+      const { sheetId } = parsePinKey(key)
+      out[sheetId] = (out[sheetId] ?? 0) + 1
+    })
+    return out
+  }, [activePins])
+
+  function handleTogglePinKey(key: CandidateId) {
+    setPins((prev) => toggleWorkspacePin(ws, prev, key))
+  }
+
+  function setTree(next: EvidenceTree) {
+    setWorkspace((prev) => updateSheetTree(prev, sheet.id, next))
+  }
+
+  function handleRemoveSheet(id: SheetId) {
+    const target = ws.sheets.find((s) => s.id === id)
+    if (!target) return
+    const hasWork = Object.keys(target.tree.nodes).length > 1
+    if (hasWork && !window.confirm(`切り口「${target.name}」を削除しますか？`)) return
+    setWorkspace((prev) => removeSheet(prev, id))
   }
 
   function setMotive(id: CandidateId, value: string) {
@@ -128,18 +187,26 @@ export default function App() {
     setSubmittedOnce(true)
   }
 
-  function replaceTree(next: EvidenceTree) {
-    setTree(next)
-    setPins([])
-    setMotives({})
+  /** 今の切り口をルートだけに戻す（この切り口のピンも外す） */
+  function handleResetSheet() {
+    const keys = new Set(subtreeIds(tree, tree.rootId).map((id) => pinKey(sheet.id, id)))
+    setTree(createTree(metric))
+    setPins((prev) => prev.filter((k) => !keys.has(k)))
   }
 
   function handleLoadExample() {
-    const hasWork = Object.keys(tree.nodes).length > 1
-    if (hasWork && !window.confirm('今のツリーを例（売上 = 顧客数 × 客単価 …）で置き換えますか？')) {
+    const hasWork = ws.sheets.some((s) => Object.keys(s.tree.nodes).length > 1)
+    if (
+      hasWork &&
+      !window.confirm(
+        'すべての切り口を例（顧客数×単価 ／ 店舗数×店舗あたり売上）で置き換えますか？',
+      )
+    ) {
       return
     }
-    replaceTree(exampleTree(intake.target.metric))
+    setWorkspace(exampleWorkspace(metric))
+    setPins([])
+    setMotives({})
     setMode('decompose')
   }
 
@@ -175,7 +242,7 @@ export default function App() {
             '予定：依頼人の調書（相談文）の曖昧な言葉をマーカーでなぞり、定義カードを書く。',
             '予定：依頼人カードで「誰からの相談か」を選ぶ。',
             '予定：目標を「指標・倍率・期限」のダイヤルで入力する（例：売上 ×1.2／3年）。',
-            'ここで決めた指標が、EVIDENCE のツリーの一番上（黒カード）になります。',
+            'ここで決めた指標が、EVIDENCE のすべての切り口のツリーの一番上（黒カード）になります。',
           ]}
           nextLabel="捜査ボードへ → EVIDENCE"
           onNext={() => setPhase('EVIDENCE')}
@@ -185,14 +252,27 @@ export default function App() {
       {phase === 'EVIDENCE' && (
         <div className="app__layout">
           <EvidenceBoard
+            key={sheet.id}
             tree={tree}
             onChange={setTree}
             mode={mode}
             onModeChange={setMode}
-            pins={activePins}
-            onTogglePin={handleTogglePin}
-            onReset={() => replaceTree(createTree(intake.target.metric))}
+            pinNumbers={pinNumbers}
+            totalPins={activePins.length}
+            onTogglePin={(nodeId) => handleTogglePinKey(pinKey(sheet.id, nodeId))}
+            onReset={handleResetSheet}
             onLoadExample={handleLoadExample}
+            tabs={
+              <SheetTabs
+                sheets={ws.sheets}
+                activeId={sheet.id}
+                pinCounts={pinCounts}
+                onSelect={(id) => setWorkspace((prev) => selectSheet(prev, id))}
+                onRename={(id, name) => setWorkspace((prev) => renameSheet(prev, id, name))}
+                onAdd={() => setWorkspace((prev) => addSheet(prev, metric))}
+                onRemove={handleRemoveSheet}
+              />
+            }
           />
 
           <div className="app__side">
@@ -201,7 +281,7 @@ export default function App() {
               maxPins={MAX_PINS}
               motives={motives}
               onMotiveChange={setMotive}
-              onUnpin={handleTogglePin}
+              onUnpin={handleTogglePinKey}
               canSubmit={activePins.length > 0}
               submitLabel={submittedOnce ? '再提出 → CAPTAIN' : 'CAPTAIN に提出'}
               onSubmit={handleSubmit}

@@ -119,3 +119,24 @@ export interface TreeLayout {
   /** 兄弟の間に置く演算子（親ごと・隙間ごと） */
   operators: { parentId: EvidenceNodeId; index: number; x: number; y: number }[]
 }
+
+/* ------------------------------------------------------------------ */
+/* 複数の切り口（同じ指標に対する別々の分解ツリー）                    */
+/* ------------------------------------------------------------------ */
+
+export type SheetId = string
+
+/** 1枚のシート = 1つの切り口（例：顧客数×単価）。ルートは全シート共通で ⅰ の指標。 */
+export interface EvidenceSheet {
+  id: SheetId
+  name: string
+  tree: EvidenceTree
+}
+
+export interface EvidenceWorkspace {
+  version: 3
+  sheets: EvidenceSheet[]
+  activeSheetId: SheetId
+  /** シート採番用 */
+  seq: number
+}
