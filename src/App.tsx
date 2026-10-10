@@ -476,6 +476,7 @@ export default function App() {
             onReset={handleResetSheet}
             onLoadExample={handleLoadExample}
             notes={(intake.extras ?? []).filter((x) => x.value.trim() && isFactLabel(x.label)).map((x) => `${x.label}：${x.value}`)}
+            genjo={[...new Set(reportView.cards.map((c) => c.current.trim()).filter(Boolean))]}
             motives={Object.fromEntries(
               activePins
                 .map((k) => parsePinKey(k))

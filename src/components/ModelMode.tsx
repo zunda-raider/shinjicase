@@ -155,6 +155,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
             readOnly
             nodeBadges={nodeBadges}
             notes={view.facts}
+            genjo={view.current.filter((c) => !view.facts.some((f) => f === c))}
             tabs={
               <SheetTabs
                 sheets={view.ws.sheets}

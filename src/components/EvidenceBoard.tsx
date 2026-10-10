@@ -22,6 +22,7 @@ import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { NodeLabel } from './NodeLabel'
 import { QaText } from './QaText'
+import { placeBoardNotes } from '../logic/boardNotes'
 
 export type BoardMode = 'decompose' | 'suspect'
 
@@ -48,8 +49,10 @@ interface Props {
   onMotiveChange?: (id: EvidenceNodeId, value: string) => void
   /** ツールバー右端（提出ボタンなど） */
   toolbarExtra?: ReactNode
-  /** ボードの隅に置く事実メモ（読み取り専用） */
+  /** ボードに置く事実メモ（読み取り専用） */
   notes?: string[]
+  /** ボードに置く現状カード（読み取り専用） */
+  genjo?: string[]
 }
 
 export function EvidenceBoard({
@@ -69,11 +72,20 @@ export function EvidenceBoard({
   onMotiveChange,
   toolbarExtra,
   notes,
+  genjo,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
 
   const layout = useMemo(() => layoutTree(tree), [tree])
+  const placement = placeBoardNotes(
+    layout,
+    [
+      { key: 'fact', kind: 'fact', lines: notes ?? [] },
+      { key: 'genjo', kind: 'genjo', lines: genjo ?? [] },
+    ],
+    motives ? 26 : 0,
+  )
   const numbers = useMemo(() => numberTree(tree), [tree])
   const nodes = Object.values(tree.nodes)
   const isDecompose = !readOnly && mode === 'decompose'
@@ -185,22 +197,37 @@ export function EvidenceBoard({
 
       <div className="evidence__scroll">
         <div
+          className="evidence__area"
+          style={{ width: placement.width, height: placement.height }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedId(null)
+          }}
+        >
+          {placement.notes.map((n) => (
+            <div
+              key={n.key}
+              className={`board-note board-note--${n.kind}`}
+              style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
+              data-note={n.kind}
+            >
+              <span className="board-note__title">{n.kind === 'fact' ? '事実' : '現状'}</span>
+              <ul>
+                {n.lines.map((t, i) => (
+                  <li key={i}>
+                    <QaText text={t} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        <div
           className="evidence__canvas"
-          style={{ width: layout.width, height: layout.height + (motives ? 26 : 0) }}
+          style={{ position: 'absolute', left: placement.treeX, top: 0, margin: 0, width: layout.width, height: layout.height + (motives ? 26 : 0) }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedId(null)
           }}
         >
           <TreeThreads tree={tree} layout={layout} />
-          {notes && notes.length > 0 && (
-            <ul className="evidence__facts" aria-label="現状の事実">
-              {notes.map((t) => (
-                <li key={t}>
-                  <QaText text={t} />
-                </li>
-              ))}
-            </ul>
-          )}
 
           {nodes.map((n) => {
             const p = layout.positions[n.id]
@@ -404,6 +431,7 @@ export function EvidenceBoard({
               </button>
             )
           })}
+        </div>
         </div>
       </div>
     </main>

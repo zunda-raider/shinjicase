@@ -3460,3 +3460,10 @@
 .evidence-card__label.is-long { font-size: 0.72rem; line-height: 1.1; }
 .operation--compact .operation-node .evidence-card__label.is-long { font-size: 0.55rem; }
 .evidence__facts { position: absolute; top: 6px; left: 8px; z-index: 1; max-width: 260px; margin: 0; padding: 4px 8px; list-style: none; font-size: 10px; line-height: 1.35; color: #f3e6c4; background: rgba(0, 0, 0, 0.28); border: 1px dashed rgba(243, 230, 196, 0.35); border-radius: 4px; pointer-events: none; }
+.evidence__area { position: relative; margin: 0 auto; }
+.board-note { position: absolute; z-index: 1; box-sizing: border-box; overflow: hidden; padding: 4px 8px; font-size: 11px; line-height: 15px; border-radius: 4px; }
+.board-note ul { margin: 0; padding: 0; list-style: none; }
+.board-note__title { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; line-height: 14px; opacity: 0.75; }
+.board-note--fact { color: #f3e6c4; background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(243, 230, 196, 0.4); }
+.board-note--genjo { color: #2a2010; background: #efe6cc; border: 1px solid #b8a578; box-shadow: 1px 2px 0 rgba(0,0,0,0.3); }
+.evidence__facts { display: none; }
