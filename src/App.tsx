@@ -13,6 +13,7 @@ import { TitleScreen } from './components/TitleScreen'
 import type { ArchiveTab } from './components/ArchiveViewer'
 import { ModelMode } from './components/ModelMode'
 import { PHASE_TITLES } from './data/phases'
+import { isFactLabel } from './logic/modelView'
 import { ModeCycle } from './components/ModeCycle'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
@@ -474,6 +475,7 @@ export default function App() {
             onTogglePin={(nodeId) => handleTogglePinKey(pinKey(sheet.id, nodeId))}
             onReset={handleResetSheet}
             onLoadExample={handleLoadExample}
+            notes={(intake.extras ?? []).filter((x) => x.value.trim() && isFactLabel(x.label)).map((x) => `${x.label}：${x.value}`)}
             motives={Object.fromEntries(
               activePins
                 .map((k) => parsePinKey(k))

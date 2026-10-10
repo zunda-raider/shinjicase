@@ -29,7 +29,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
   const [phase, setPhase] = useState<Phase>(
     initialPhase && initialPhase !== 'RESULT' ? initialPhase : 'INTAKE',
   )
-  const [sheetId, setSheetId] = useState('s1')
+  const [sheetId, setSheetId] = useState<string | null>(null)
   const [pitchIdx, setPitchIdx] = useState(0)
   const [pickOpen, setPickOpen] = useState(false)
 
@@ -39,7 +39,9 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
   }, [caseId, idx, mode])
   if (!view) return null
 
-  const sheet = view.ws.sheets.find((s) => s.id === sheetId) ?? view.ws.sheets[0]
+  const withMeasures = view.ws.sheets.find((s) => Object.values(s.measures).some((l) => l.length))
+  const defaultSheet = phase === 'OPERATION' && withMeasures ? withMeasures : view.ws.sheets[0]
+  const sheet = view.ws.sheets.find((s) => s.id === sheetId) ?? defaultSheet
   const ws = { ...view.ws, activeSheetId: sheet.id }
   const pinNumbers: Record<string, number> = {}
   view.pins.forEach((k, i) => {
@@ -85,7 +87,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
                     className={i === idx ? 'is-active' : ''}
                     onClick={() => {
                       setIdx(i)
-                      setSheetId('s1')
+                      setSheetId(null)
                       setPitchIdx(0)
                       setPickOpen(false)
                     }}
@@ -148,6 +150,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
             onLoadExample={() => {}}
             readOnly
             nodeBadges={nodeBadges}
+            notes={view.facts}
             tabs={
               <SheetTabs
                 sheets={view.ws.sheets}
@@ -209,7 +212,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
                 className={`report-tab ${pitch === p ? 'is-active' : ''}`}
                 onClick={() => setPitchIdx(i)}
               >
-                {p.title}
+                {p.role ?? '？'}
               </button>
             ))}
           </div>

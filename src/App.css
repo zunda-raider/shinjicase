@@ -3459,3 +3459,4 @@
 .mode-switch__seg--god.is-active { background: linear-gradient(90deg, #c9a23a, #f2d27a); color: #3a2a00; }
 .evidence-card__label.is-long { font-size: 0.72rem; line-height: 1.1; }
 .operation--compact .operation-node .evidence-card__label.is-long { font-size: 0.55rem; }
+.evidence__facts { position: absolute; top: 6px; left: 8px; z-index: 1; max-width: 260px; margin: 0; padding: 4px 8px; list-style: none; font-size: 10px; line-height: 1.35; color: #f3e6c4; background: rgba(0, 0, 0, 0.28); border: 1px dashed rgba(243, 230, 196, 0.35); border-radius: 4px; pointer-events: none; }

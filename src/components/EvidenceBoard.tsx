@@ -21,6 +21,7 @@ import {
 import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { NodeLabel } from './NodeLabel'
+import { QaText } from './QaText'
 
 export type BoardMode = 'decompose' | 'suspect'
 
@@ -47,6 +48,8 @@ interface Props {
   onMotiveChange?: (id: EvidenceNodeId, value: string) => void
   /** ツールバー右端（提出ボタンなど） */
   toolbarExtra?: ReactNode
+  /** ボードの隅に置く事実メモ（読み取り専用） */
+  notes?: string[]
 }
 
 export function EvidenceBoard({
@@ -65,6 +68,7 @@ export function EvidenceBoard({
   motives,
   onMotiveChange,
   toolbarExtra,
+  notes,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
@@ -188,6 +192,15 @@ export function EvidenceBoard({
           }}
         >
           <TreeThreads tree={tree} layout={layout} />
+          {notes && notes.length > 0 && (
+            <ul className="evidence__facts" aria-label="現状の事実">
+              {notes.map((t) => (
+                <li key={t}>
+                  <QaText text={t} />
+                </li>
+              ))}
+            </ul>
+          )}
 
           {nodes.map((n) => {
             const p = layout.positions[n.id]

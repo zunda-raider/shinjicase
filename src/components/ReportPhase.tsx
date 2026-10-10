@@ -15,6 +15,14 @@ interface Props {
   onOpenResult: () => void
 }
 
+const TAB_NAMES = ['メイン', 'サブ', 'サブ2']
+
+/** WARRANT の順位で決める（未評価は ？） */
+function rankName(m: RankedMeasure | undefined): string {
+  if (!m || m.score === null || !m.rank) return '？'
+  return TAB_NAMES[m.rank - 1] ?? '？'
+}
+
 /** ⅵ 最終報告：施策ごとの1分台本。提出ボタンは常時表示 → RESULT へ。 */
 export function ReportPhase({
   measures,
@@ -50,7 +58,6 @@ export function ReportPhase({
           <>
             <div className="report-tabs" role="tablist" aria-label="施策台本タブ">
               {report.cards.map((c, i) => {
-                const m = measures.find((x) => x.key === c.measureKey)
                 return (
                   <span key={c.measureKey} className="report-tab-wrap">
                   <button
@@ -60,7 +67,7 @@ export function ReportPhase({
                     className={`report-tab ${report.activeIndex === i ? 'is-active' : ''}`}
                     onClick={() => onSelectTab(i)}
                   >
-                    {i + 1}. {m?.text ?? c.measureKey}
+                    {rankName(measures.find((x) => x.key === c.measureKey))}
                   </button>
                   {measures.length > report.cards.length && (
                     <select
@@ -88,7 +95,7 @@ export function ReportPhase({
               <article className="report-pitch" role="tabpanel">
                 <header className="report-pitch__head">
                   <span className="report-pitch__label">
-                    施策{report.activeIndex + 1}
+                    {rankName(activeMeasure)}
                     {activeMeasure
                       ? ` · ${activeMeasure.score === null ? '未評価' : `${activeMeasure.rank}位 ${activeMeasure.score}点`}`
                       : ''}

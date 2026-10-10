@@ -7,7 +7,6 @@ import {
   numberTree,
   subtreeIds,
 } from '../logic/evidenceTree'
-import { circled } from '../logic/operation'
 import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
@@ -214,7 +213,6 @@ export function OperationPhase({
                     'operation-node',
                     isRoot ? 'is-root' : '',
                     !n.label.trim() ? 'is-blank' : '',
-                    pinNo !== undefined ? 'is-pinned' : '',
                     highlight === n.id ? 'is-highlight' : '',
                   ]
                     .filter(Boolean)
@@ -226,11 +224,6 @@ export function OperationPhase({
                   onMouseEnter={() => setHoverId(n.id)}
                   onMouseLeave={() => setHoverId(null)}
                 >
-                  {pinNo !== undefined && (
-                    <span className="evidence-card__redpin" aria-label={`容疑者 ${pinNo}`}>
-                      📌<span className="evidence-card__pin-no">{pinNo}</span>
-                    </span>
-                  )}
                   {isRoot ? (
                     <span className="evidence-card__tag">ⅰ の指標</span>
                   ) : (
@@ -278,7 +271,6 @@ export function OperationPhase({
           )}
           {cardIds.map((id) => {
             const n = tree.nodes[id]
-            const pinNo = pinNumbers[id]
             const list = sheet.measures[id] ?? []
             const count = filledMeasureCount(sheet, id)
             return (
@@ -289,9 +281,7 @@ export function OperationPhase({
                 }}
                 className={[
                   'plan-card',
-                  pinNo !== undefined ? 'is-suspect' : '',
                   highlight === id ? 'is-highlight' : '',
-                  pinNo !== undefined && count === 0 ? 'is-missing' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -302,11 +292,6 @@ export function OperationPhase({
                 <header className="plan-card__head" onClick={() => selectFromCard(id)}>
                   <span className="plan-card__no">{numbers[id]}</span>
                   <span className="plan-card__name">{n.label.trim() || '（未記入）'}</span>
-                  {pinNo !== undefined && (
-                    <span className="plan-card__pin" title="容疑者">
-                      📌{circled(pinNo)}
-                    </span>
-                  )}
                   <span className="plan-card__count">{count} 件</span>
                 </header>
                 {list.length > 0 && (

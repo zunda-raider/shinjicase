@@ -32,6 +32,8 @@ export function modeText(src: string, mode: ModelMode): string {
 
 export interface ModelPitch {
   title: string
+  /** メイン/サブ：原文（GHOST 部分）が明示している場合のみ。まるやまの6人はいずれも明示なし */
+  role?: string
   premise: string
   current: string
   goal: string
@@ -53,6 +55,8 @@ export interface ModelView {
   /** measureKey → 見込み */
   estimates: Record<string, string>
   current: string[]
+  /** 事実（売上構成・数字など）：EVIDENCE ボードの注記 */
+  facts: string[]
   focus: string
   notes: { label: string; text: string }[]
   pitches: ModelPitch[]
@@ -184,6 +188,7 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     nodeQa,
     estimates,
     current,
+    facts,
     focus: modeText(student.focus, mode),
     notes,
     pitches,
