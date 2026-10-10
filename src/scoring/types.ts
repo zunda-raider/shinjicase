@@ -1,25 +1,27 @@
 import type { ScorePacket } from '../logic/report'
 
 export type ScoreLetter = 'S' | 'A' | 'B' | 'C' | 'D'
+export type Reach = '◎' | '○' | '△'
 
-export interface ScoreBreakdown {
-  /** 構造化（ツリー・切り口） 0–25 */
-  structure: number
-  /** ボトルネック選定 0–25 */
-  bottleneck: number
-  /** 打ち手の対応 0–25 */
-  measures: number
-  /** 評価の一貫性 0–25 */
-  evaluation: number
+export type CriterionId = 'premise' | 'decomposition' | 'focus' | 'measures' | 'speech' | 'evaluation'
+
+export interface CriterionScore {
+  id: CriterionId
+  name: string
+  score: number
+  max: number
+  feedback: string
 }
 
 export interface ScoreResult {
-  source: 'llama' | 'offline'
+  source: 'llama' | 'rule'
   model?: string
   total: number
   grade: ScoreLetter
-  breakdown: ScoreBreakdown
+  criteria: CriterionScore[]
   comment: string
+  reach: Reach
+  closest?: { caseId: string; no: number; title: string; missing: string }
 }
 
 export type { ScorePacket }
@@ -30,6 +32,12 @@ export function letterFromTotal(total: number): ScoreLetter {
   if (total >= 65) return 'B'
   if (total >= 50) return 'C'
   return 'D'
+}
+
+export function reachFromTotal(total: number): Reach {
+  if (total >= 85) return '◎'
+  if (total >= 70) return '○'
+  return '△'
 }
 
 export function clamp(n: number, lo = 0, hi = 25): number {

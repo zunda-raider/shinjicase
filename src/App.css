@@ -3405,3 +3405,7 @@
 .mode-cycle--ghost { background: rgba(190, 215, 250, 0.85); color: #1b2a44; }
 .mode-cycle--god { background: linear-gradient(90deg, #c9a23a, #f2d27a); color: #3a2a00; }
 .model-students { margin-left: 0; }
+.result-west__reach { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.result-west__reach-mark { font-size: 40px; line-height: 1; }
+.result-west__closest { background: transparent; border: 1px dashed currentColor; border-radius: 6px; padding: 3px 8px; color: inherit; cursor: pointer; font-weight: 700; display: flex; flex-direction: column; align-items: center; }
+.result-west__closest small { font-weight: 400; font-size: 11px; opacity: 0.8; }

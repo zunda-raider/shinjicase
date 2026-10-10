@@ -14,7 +14,7 @@ import {
   updatePitchCard,
 } from './report'
 import type { EvidenceWorkspace } from '../types'
-import { scoreOffline } from '../scoring/offlineScorer'
+import { scoreByRubric, scoreInputFromPlayer } from '../scoring/rubricScorer'
 
 function nid(ws: EvidenceWorkspace, sheetId: string, label: string) {
   return Object.values(ws.sheets.find((s) => s.id === sheetId)!.tree.nodes).find(
@@ -130,15 +130,15 @@ describe('score packet + offline', () => {
     expect(packet.pitches).toHaveLength(2)
     expect(packet.pitches[0].premiseDefinition).toContain('売上')
     expect(packet.pitches[0].where).toContain('既存顧客')
-    const score = scoreOffline(packet)
-    expect(score.source).toBe('offline')
+    const input = scoreInputFromPlayer({ caseId: 'blue-oasis', intake: STUB_INTAKE, ws, pins, motives: { [pins[0]]: '来店頻度低下が主因である' }, warrant, report })
+    const score = scoreByRubric(input)
+    expect(score.source).toBe('rule')
     expect(score.total).toBeGreaterThanOrEqual(0)
     expect(score.total).toBeLessThanOrEqual(100)
     expect(['S', 'A', 'B', 'C', 'D']).toContain(score.grade)
-    expect(score.breakdown.structure).toBeGreaterThanOrEqual(0)
-    expect(score.comment).toContain('オフライン採点')
+    expect(score.criteria).toHaveLength(6)
     // deterministic
-    expect(scoreOffline(packet).total).toBe(score.total)
+    expect(scoreByRubric(input).total).toBe(score.total)
   })
 })
 

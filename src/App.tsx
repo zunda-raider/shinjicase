@@ -51,6 +51,7 @@ import {
   createReportState,
 } from './logic/report'
 import { scoreCase } from './scoring/llamaClient'
+import { scoreInputFromPlayer } from './scoring/rubricScorer'
 import type { ScoreResult } from './scoring/types'
 import {
   caseStorageKey,
@@ -103,7 +104,7 @@ export default function App() {
   const sample = getCase(caseId)
   const [intake, setIntake] = useState<IntakeData>(() => loadCaseIntake(loadActiveCaseId()))
   const [onTitle, setOnTitle] = useState(true)
-  const [model, setModel] = useState<{ caseId: string; tab: ArchiveTab; phase?: Phase } | null>(null)
+  const [model, setModel] = useState<{ caseId: string; tab: ArchiveTab; phase?: Phase; student?: number } | null>(null)
   const [phase, setPhase] = useState<Phase>('INTAKE')
   const metric = intakeMetric(intake)
   const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() =>
@@ -239,7 +240,16 @@ export default function App() {
         report: reportView,
         rubric: getIdeal(caseId),
       })
-      const result = await scoreCase(packet)
+      const input = scoreInputFromPlayer({
+        caseId,
+        intake,
+        ws,
+        pins: activePins,
+        motives,
+        warrant: warrantView,
+        report: reportView,
+      })
+      const result = await scoreCase(packet, input)
       setScore(result)
     } catch (e) {
       setScoreError(
@@ -374,11 +384,12 @@ export default function App() {
         caseId={model.caseId}
         mode={model.tab}
         initialPhase={model.phase}
+        initialStudent={model.student}
         onViewMode={(m, ph) => {
           if (m === 'NORMAL') {
             setModel(null)
             setPhase(ph)
-          } else setModel({ caseId: model.caseId, tab: m, phase: ph })
+          } else setModel({ ...model, tab: m, phase: ph })
         }}
       />
     )
@@ -561,6 +572,7 @@ export default function App() {
           error={scoreError}
           onBack={() => setPhase('REPORT')}
           onResubmit={() => void handleSubmitReport(true)}
+          onOpenModel={(no) => setModel({ caseId, tab: 'GOD', phase: 'EVIDENCE', student: no })}
         />
       )}
 

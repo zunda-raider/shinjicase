@@ -1,12 +1,9 @@
 import type { ScorePacket } from '../logic/report'
-import { scoreOffline } from './offlineScorer'
-import { clamp, letterFromTotal, type ScoreResult } from './types'
-
-const BREAKDOWN_KEYS = ['structure', 'bottleneck', 'measures', 'evaluation'] as const
+import { scoreByRubric, type ScoreInput } from './rubricScorer'
+import { letterFromTotal, reachFromTotal, type CriterionId, type ScoreResult } from './types'
 
 function env(name: string): string {
   try {
-    // Vite クライアント
     const v = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.[name]
     return typeof v === 'string' ? v.trim() : ''
   } catch {
@@ -14,77 +11,74 @@ function env(name: string): string {
   }
 }
 
-function parseModelJson(text: string): Partial<ScoreResult> | null {
+interface LlamaAdjust {
+  adjust?: Partial<Record<CriterionId, number>>
+  feedback?: Partial<Record<CriterionId, string>>
+  comment?: string
+}
+
+export function parseModelJson(text: string): LlamaAdjust | null {
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
   if (start < 0 || end <= start) return null
   try {
-    return JSON.parse(text.slice(start, end + 1)) as Partial<ScoreResult>
+    return JSON.parse(text.slice(start, end + 1)) as LlamaAdjust
   } catch {
     return null
   }
 }
 
-function normalize(raw: Partial<ScoreResult>, source: 'llama', model?: string): ScoreResult | null {
-  const b = raw.breakdown
-  if (!b || typeof raw.total !== 'number' || typeof raw.comment !== 'string') return null
-  const breakdown = {
-    structure: clamp(Number(b.structure) || 0),
-    bottleneck: clamp(Number(b.bottleneck) || 0),
-    measures: clamp(Number(b.measures) || 0),
-    evaluation: clamp(Number(b.evaluation) || 0),
-  }
-  for (const k of BREAKDOWN_KEYS) {
-    if (typeof breakdown[k] !== 'number') return null
-  }
-  let total = Math.round(raw.total)
-  if (Number.isNaN(total)) {
-    total = breakdown.structure + breakdown.bottleneck + breakdown.measures + breakdown.evaluation
-  }
-  total = Math.max(0, Math.min(100, total))
-  return {
-    source,
-    model,
-    total,
-    grade: raw.grade && 'SABCD'.includes(raw.grade) ? (raw.grade as ScoreResult['grade']) : letterFromTotal(total),
-    breakdown,
-    comment: raw.comment.trim() || '（講評なし）',
-  }
-}
-
-function buildPrompt(packet: ScorePacket): string {
-  return `あなたはケース面接の採点官です。次のJSONケースを採点し、必ず次のJSONだけを返してください（前後に説明文を付けない）:
-{"total":0-100の整数,"grade":"S|A|B|C|D","breakdown":{"structure":0-25,"bottleneck":0-25,"measures":0-25,"evaluation":0-25},"comment":"日本語で2〜4文の講評"}
-
-採点観点:
-- structure: ロジックツリー／切り口の分解の妥当性
-- bottleneck: 容疑者（ボトルネック）選定と動機
-- measures: 打ち手がツリーに紐づいているか、最終報告の「向上」「問題点」の質
-- evaluation: 評価軸と○△✖の一貫性
-${packet.rubric ? `
-模範解答の許容条件（rubric）がある。requiredElements の合格ライン、acceptedFirstDecompositions、hotSpots（いずれかの系統に沿っているか）、rejected（不可）を基準に厳しめに採点し、講評で系統への一致・不足を指摘すること。
-` : ''}
+export function buildPrompt(packet: ScorePacket, rule: ScoreResult): string {
+  return `あなたはケース面接の採点官です。ルールベース採点の結果を見直し、次のJSONだけを返してください（説明文なし）:
+{"adjust":{"premise":-10..10,"decomposition":-10..10,"focus":-10..10,"measures":-10..10,"speech":-10..10,"evaluation":-10..10},"feedback":{"<id>":"日本語一行"},"comment":"日本語で2〜3文の講評"}
+調整はルール結果で拾えていない質だけに限る。rubric（許容解）があれば系統・許容する分解・不可を基準にする。
+ルール結果:
+${JSON.stringify(rule.criteria)}
 ケース:
-${JSON.stringify(packet, null, 2)}`
+${JSON.stringify(packet)}`
 }
 
-async function scoreViaProxy(packet: ScorePacket): Promise<ScoreResult | null> {
+/** ルール結果に Llama の調整（各 ±10、0〜満点にクリップ）と講評を重ねる */
+export function applyAdjust(rule: ScoreResult, adj: LlamaAdjust, model?: string): ScoreResult {
+  const criteria = rule.criteria.map((c) => {
+    const d = Math.max(-10, Math.min(10, Math.round(Number(adj.adjust?.[c.id]) || 0)))
+    const fb = adj.feedback?.[c.id]
+    return {
+      ...c,
+      score: Math.max(0, Math.min(c.max, c.score + d)),
+      feedback: typeof fb === 'string' && fb.trim() ? fb.trim() : c.feedback,
+    }
+  })
+  const total = criteria.reduce((a, c) => a + c.score, 0)
+  return {
+    ...rule,
+    source: 'llama',
+    model,
+    criteria,
+    total,
+    grade: letterFromTotal(total),
+    reach: reachFromTotal(total),
+    comment: typeof adj.comment === 'string' && adj.comment.trim() ? adj.comment.trim() : rule.comment,
+  }
+}
+
+async function viaProxy(prompt: string): Promise<{ adj: LlamaAdjust; model?: string } | null> {
   try {
     const res = await fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(packet),
+      body: JSON.stringify({ prompt }),
     })
     if (!res.ok) return null
-    const data = (await res.json()) as ScoreResult & { error?: string }
-    if (data.error || data.source !== 'llama') return null
-    return normalize(data, 'llama', data.model) ?? data
+    const data = (await res.json()) as LlamaAdjust & { error?: string; model?: string }
+    if (data.error) return null
+    return { adj: data, model: data.model }
   } catch {
     return null
   }
 }
 
-async function scoreViaOpenAICompat(packet: ScorePacket): Promise<ScoreResult | null> {
+async function viaOpenAICompat(prompt: string): Promise<{ adj: LlamaAdjust; model?: string } | null> {
   const base = env('VITE_LLAMA_BASE_URL').replace(/\/$/, '')
   const key = env('VITE_LLAMA_API_KEY')
   const model = env('VITE_LLAMA_MODEL') || 'llama3.2'
@@ -92,41 +86,29 @@ async function scoreViaOpenAICompat(packet: ScorePacket): Promise<ScoreResult | 
   try {
     const res = await fetch(`${base}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(key ? { Authorization: `Bearer ${key}` } : {}),
-      },
+      headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({
         model,
         temperature: 0.2,
         messages: [
           { role: 'system', content: 'あなたは厳格なケース面接採点官。JSONのみ返す。' },
-          { role: 'user', content: buildPrompt(packet) },
+          { role: 'user', content: prompt },
         ],
       }),
     })
     if (!res.ok) return null
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[]
-    }
-    const content = data.choices?.[0]?.message?.content ?? ''
-    const parsed = parseModelJson(content)
-    return parsed ? normalize(parsed, 'llama', model) : null
+    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+    const adj = parseModelJson(data.choices?.[0]?.message?.content ?? '')
+    return adj ? { adj, model } : null
   } catch {
     return null
   }
 }
 
-/**
- * Llama 採点を試み、だめならオフライン採点に落ちる。
- * 優先順位: Vite プロキシ(/api/score → ollama 等) → VITE_LLAMA_* → オフライン
- */
-export async function scoreCase(packet: ScorePacket): Promise<ScoreResult> {
-  const viaProxy = await scoreViaProxy(packet)
-  if (viaProxy) return viaProxy
-  const viaEnv = await scoreViaOpenAICompat(packet)
-  if (viaEnv) return viaEnv
-  return scoreOffline(packet)
+/** 主採点はルールベース。Llama があれば ±10 の調整と講評を重ねる。 */
+export async function scoreCase(packet: ScorePacket, input: ScoreInput): Promise<ScoreResult> {
+  const rule = scoreByRubric(input)
+  const prompt = buildPrompt(packet, rule)
+  const r = (await viaProxy(prompt)) ?? (await viaOpenAICompat(prompt))
+  return r ? applyAdjust(rule, r.adj, r.model) : rule
 }
-
-export { buildPrompt, parseModelJson, normalize }

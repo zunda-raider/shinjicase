@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { highlightQa, splitArchive, splitGodTitle } from './archive'
 import { getIdeal } from '../data/ideals'
-import { rubricHits } from '../scoring/offlineScorer'
-import type { ScorePacket } from './report'
+import { lineageOf } from '../scoring/rubricScorer'
 
 const md = readFileSync(new URL('../data/archive/maruyama-department-store.md', import.meta.url), 'utf8')
 
@@ -37,17 +36,8 @@ describe('maruyama ideal rubric', () => {
     expect(getIdeal('blue-oasis')).toBeNull()
   })
 
-  it('offline keyword hits: lineage bonus, rejected penalty', () => {
-    const base = {
-      pitches: [],
-      allMeasures: [{ text: '外商でギフトと法人需要を取る' }],
-      warrantFinalAnswer: '',
-      rubric: getIdeal('local-dept')!,
-    } as unknown as ScorePacket
-    const ok = rubricHits(base)
-    expect(ok.lineage).toBe('客単価を深掘りする')
-    expect(ok.bonus).toBe(3)
-    const bad = rubricHits({ ...base, warrantFinalAnswer: '値引きで集客' })
-    expect(bad.rejected).toEqual(['値引きを中心に据える'])
+  it('lineage keyword match', () => {
+    const ideal = getIdeal('local-dept')!
+    expect(lineageOf('外商でギフトと法人需要を取る', ideal)?.name).toBe('客単価を深掘りする')
   })
 })

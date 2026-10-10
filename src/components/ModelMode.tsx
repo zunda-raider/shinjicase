@@ -18,14 +18,15 @@ interface Props {
   caseId: string
   mode: Mode
   initialPhase?: Phase
+  initialStudent?: number
   onViewMode: (m: ViewMode, phase: Phase) => void
 }
 
 
 /** GHOST MODE / GOD MODE：優秀な生徒の回答をいつもの画面で閲覧（編集不可・保存なし） */
-export function ModelMode({ caseId, mode, initialPhase, onViewMode }: Props) {
+export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMode }: Props) {
   const students = getModelStudents(caseId)
-  const [idx, setIdx] = useState(0)
+  const [idx, setIdx] = useState(Math.max(0, (initialStudent ?? 1) - 1))
   const [phase, setPhase] = useState<Phase>(
     initialPhase && initialPhase !== 'RESULT' ? initialPhase : 'INTAKE',
   )

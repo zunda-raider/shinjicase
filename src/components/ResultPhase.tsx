@@ -6,47 +6,11 @@ interface Props {
   error: string | null
   onBack: () => void
   onResubmit: () => void
+  onOpenModel?: (no: number) => void
 }
 
-const CRITERIA: {
-  key: keyof ScoreResult['breakdown']
-  en: string
-  jp: string
-  max: number
-  blurb: string
-}[] = [
-  {
-    key: 'structure',
-    en: 'STRUCTURE',
-    jp: '構造化',
-    max: 25,
-    blurb: '切り口とツリーで問題を分解できているか',
-  },
-  {
-    key: 'bottleneck',
-    en: 'BOTTLENECK',
-    jp: 'ボトルネック選定',
-    max: 25,
-    blurb: '容疑者（ボトルネック）の絞り込みと動機',
-  },
-  {
-    key: 'measures',
-    en: 'MEASURES',
-    jp: '打ち手の対応',
-    max: 25,
-    blurb: '1分台本（前提〜効果）の揃いと説得力',
-  },
-  {
-    key: 'evaluation',
-    en: 'EVALUATION',
-    jp: '評価の一貫性',
-    max: 25,
-    blurb: 'WARRANT の軸・○△✖・優先順位の一貫性',
-  },
-]
-
 /** 提出後の採点結果 — 西部劇（Wanted / Saloon 掲示） */
-export function ResultPhase({ score, scoring, error, onBack, onResubmit }: Props) {
+export function ResultPhase({ score, scoring, error, onBack, onResubmit, onOpenModel }: Props) {
   if (!score && !scoring) {
     return (
       <div className="result-west result-west--empty" aria-label="採点結果">
@@ -90,12 +54,7 @@ export function ResultPhase({ score, scoring, error, onBack, onResubmit }: Props
         </div>
         <p className="result-west__wanted">WANTED — SCORE POSTED</p>
         <h2 className="result-west__title">採点結果</h2>
-        <p className="result-west__source">
-          {s.source === 'offline'
-            ? 'オフライン採点（保安官代行）'
-            : `Llama 講評${s.model ? ` · ${s.model}` : ''}`}
-        </p>
-
+        {s.source === 'llama' && <p className="result-west__source">Llama{s.model ? ` · ${s.model}` : ''}</p>}
         <div className="result-west__hero">
           <div className="result-west__total">
             <span className="result-west__total-label">TOTAL</span>
@@ -103,33 +62,41 @@ export function ResultPhase({ score, scoring, error, onBack, onResubmit }: Props
             <span className="result-west__total-max">/ 100</span>
           </div>
           <div className={`result-west__grade result-west__grade--${s.grade}`}>{s.grade}</div>
+          <div className="result-west__reach">
+            <span className="result-west__total-label">到達度</span>
+            <span className="result-west__reach-mark">{s.reach}</span>
+            {s.closest && (
+              <button type="button" className="result-west__closest" onClick={() => onOpenModel?.(s.closest!.no)}>
+                近い：生徒{s.closest.no} ›
+                <small>{s.closest.missing}</small>
+              </button>
+            )}
+          </div>
         </div>
 
-        <h3 className="result-west__criteria-title">評価項目（各 0–25）</h3>
-        <ul className="result-west__criteria">
-          {CRITERIA.map((c) => {
-            const pts = s.breakdown[c.key]
+                <ul className="result-west__criteria">
+          {s.criteria.map((c) => {
+            const pts = c.score
             const pct = Math.max(0, Math.min(100, (pts / c.max) * 100))
             return (
-              <li key={c.key} className="result-west__criterion">
+              <li key={c.id} className="result-west__criterion">
                 <div className="result-west__criterion-top">
                   <div>
-                    <span className="result-west__criterion-en">{c.en}</span>
-                    <span className="result-west__criterion-jp">{c.jp}</span>
+                    <span className="result-west__criterion-jp">{c.name}</span>
                   </div>
                   <span className="result-west__criterion-pts">
                     {pts}
                     <span className="result-west__criterion-max">/{c.max}</span>
                   </span>
                 </div>
-                <p className="result-west__criterion-blurb">{c.blurb}</p>
+                <p className="result-west__criterion-blurb">{c.feedback}</p>
                 <div
                   className="result-west__bar"
                   role="meter"
                   aria-valuemin={0}
                   aria-valuemax={c.max}
                   aria-valuenow={pts}
-                  aria-label={c.jp}
+                  aria-label={c.name}
                 >
                   <div className="result-west__bar-fill" style={{ width: `${pct}%` }} />
                 </div>

@@ -27,6 +27,17 @@ export const MARUYAMA_IDEAL: IdealAnswer = {
     '来店客数×購買率×客単価×来店頻度',
     'カテゴリ別：衣料品／食品／化粧品／その他',
   ],
+  decompositionPatterns: [
+    { name: 'チャネル別', op: 'add', groups: [['店頭', '来店', '一般売場'], ['外商'], ['ギフト'], ['催事']], need: 2 },
+    { name: '客数×客単価', op: 'mul', groups: [['客数', '来店客数', '顧客数'], ['客単価', '単価']] },
+    { name: '客数×購買率×客単価', op: 'mul', groups: [['客数', '来店客数'], ['購買率', '購入率'], ['客単価', '単価']] },
+    {
+      name: '来店客数×購買率×客単価×来店頻度',
+      op: 'mul',
+      groups: [['来店客数', '客数'], ['購買率', '購入率'], ['客単価', '単価'], ['来店頻度', '頻度']],
+    },
+    { name: 'カテゴリ別', op: 'add', groups: [['衣料'], ['食品'], ['化粧品'], ['その他', '雑貨']], need: 2 },
+  ],
   hotSpots: [
     {
       id: 'unit-price',
@@ -48,6 +59,6 @@ export const MARUYAMA_IDEAL: IdealAnswer = {
   rejected: [
     { text: '衣料品でSPAやECと価格で正面から勝負する', keywords: ['SPAと価格', 'ECと価格'] },
     { text: '不動産の賃料収入を「売上向上」として扱う', keywords: ['賃料収入'] },
-    { text: '値引きを中心に据える', keywords: ['値引き', '割引', 'セール'] },
+    { text: '値引きを中心に据える', keywords: ['値引き', '割引'] },
   ],
 }
