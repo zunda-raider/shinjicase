@@ -37,7 +37,7 @@ export function SuspectList({
 
       {suspects.length === 0 ? (
         <p className="suspect-list__empty">
-          「容疑者モード」でツリーのカードをクリックすると赤ピンが刺さり、ここに並ぶ。
+          容疑者なし
         </p>
       ) : (
         <ol className="suspect-list__items">

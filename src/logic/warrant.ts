@@ -312,7 +312,7 @@ export function warrantCaptainLines(
   const unnamed = state.axes.filter((a) => !a.name.trim())
   if (unnamed.length > 0) {
     return [
-      'CAPTAIN「軸の名前が空だ。効果・実行しやすさ・期間でも、自分の言葉でもいい。」',
+      'CAPTAIN「軸の名前が空だ。」',
       'CAPTAIN「軸に名前をつけてから評点をつけろ。」',
     ]
   }

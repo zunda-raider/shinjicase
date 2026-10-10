@@ -15,10 +15,6 @@ export function CasePicker({ activeId, onSelect }: Props) {
         <h2>CASE SELECT — 事件ファイル</h2>
         <span className="board__hint">{SAMPLE_CASES.length} 件のサンプル</span>
       </div>
-      <p className="evidence__help">
-        構造化の定番例を警察ドラマ風に収めたサンプル事件です。選ぶと前提メモが切り替わり、
-        進捗は<strong>事件ごとに別保存</strong>されます。「例を読み込む」で推奨ツリーが入ります。
-      </p>
       <ul className="case-picker__list">
         {SAMPLE_CASES.map((c) => (
           <li key={c.id}>

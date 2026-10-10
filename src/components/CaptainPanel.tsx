@@ -26,12 +26,6 @@ export function CaptainPanel({
       </header>
 
       <div className="captain-panel__body">
-        {state === 'idle' && (
-          <p className="captain-panel__idle">
-            ツリーを分解したら「容疑者モード」でボトルネックに赤ピンを最大3本。動機を書いて提出せよ。こちらから質問する。
-          </p>
-        )}
-
         {(state === 'challenging' || state === 'acknowledged') && (
           <ul className="captain-panel__lines">
             {lines.map((line, i) => (
@@ -48,10 +42,7 @@ export function CaptainPanel({
 
         {state === 'acknowledged' && (
           <p className="captain-panel__hint">
-            ツリー・ピン・動機を直して再提出できる。
-            {reviseBonusAwarded
-              ? ' REVISE BONUS 反映済み。'
-              : ' 再提出で REVISE BONUS を獲得。'}
+            {reviseBonusAwarded ? 'REVISE BONUS 反映済み' : 'REVISE BONUS 未獲得'}
           </p>
         )}
       </div>

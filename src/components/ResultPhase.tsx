@@ -53,9 +53,6 @@ export function ResultPhase({ score, scoring, error, onBack, onResubmit }: Props
         <div className="result-west__poster">
           <p className="result-west__wanted">NOTICE</p>
           <h2 className="result-west__title">まだ掲示がない</h2>
-          <p className="result-west__lede">
-            REPORT で台本を書いて「提出して採点」すると、ここに点数と講評が貼り出されます。
-          </p>
           {error && <p className="result-west__err">{error}</p>}
           <div className="result-west__actions">
             <button type="button" className="btn btn--primary" onClick={onBack}>
@@ -73,7 +70,7 @@ export function ResultPhase({ score, scoring, error, onBack, onResubmit }: Props
         <div className="result-west__poster">
           <p className="result-west__wanted">HOLD UP…</p>
           <h2 className="result-west__title">採点中</h2>
-          <p className="result-west__lede">保安官が台本を読んでいる。しばらく待て。</p>
+          
         </div>
       </div>
     )

@@ -74,9 +74,6 @@ export function WarrantPhase({
         <section className="warrant-axes" aria-label="評価軸">
           <div className="warrant-axes__head">
             <h3>評価軸（{axes.length}/{MAX_AXES}）</h3>
-            <span className="warrant-axes__note">
-              自分で名前をつける（2〜{MAX_AXES}本）。例：効果・実行しやすさ・期間
-            </span>
           </div>
           <ul className="warrant-axes__list">
             {axes.map((a, i) => (
@@ -120,8 +117,8 @@ export function WarrantPhase({
         {measures.length === 0 ? (
           <p className="suspect-list__empty">
             {allMeasures.length === 0
-              ? '評点する施策がない。OPERATION で施策を書いてから戻ってきてください。'
-              : '容疑者に紐づく施策がない。ピンを刺すか、「容疑者の施策のみ」を外してください。'}
+              ? '施策なし'
+              : '容疑者の施策なし'}
           </p>
         ) : (
           <div className="warrant-matrix-wrap">

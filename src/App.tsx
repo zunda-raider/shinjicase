@@ -377,7 +377,6 @@ export default function App() {
           <section className="board intake-brief" aria-label="選択中の事件">
             <div className="board__header">
               <h2>{sample.label} — 事件概要</h2>
-              <span className="board__hint">捜査中のファイル</span>
             </div>
             <p className="intake-brief__text">{sample.briefing}</p>
             {intake.statement && (
@@ -386,10 +385,6 @@ export default function App() {
                 <p>{intake.statement}</p>
               </blockquote>
             )}
-            <p className="evidence__help">
-              上の黄色メモ（定義・依頼人・TARGET）はこの事件の仮置き前提です。EVIDENCE で
-              「例を読み込む」と、この事件用の構造化ツリーが入ります。
-            </p>
             <div className="intake-brief__actions">
               <button
                 type="button"

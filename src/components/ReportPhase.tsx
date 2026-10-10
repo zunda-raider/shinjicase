@@ -48,7 +48,7 @@ export function ReportPhase({
         <section className="report-pick" aria-label="発表する施策を選ぶ">
           <h3 className="report-block__title">発表する施策（最大{MAX_FEATURED}）</h3>
           {measures.length === 0 ? (
-            <p className="suspect-list__empty">施策がありません。OPERATION / WARRANT を先に進めてください。</p>
+            <p className="suspect-list__empty">施策なし</p>
           ) : (
             <ul className="report-pick__list">
               {measures.map((m) => {

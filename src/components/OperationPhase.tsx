@@ -175,7 +175,7 @@ export function OperationPhase({
           >
             リセット
           </button>
-          <span className="operation__zoom-hint">ドラッグで移動</span>
+          
         </div>
         <div
           ref={scrollRef}
@@ -287,8 +287,8 @@ export function OperationPhase({
           {cardIds.length === 0 && (
             <p className="suspect-list__empty">
               {onlySuspects
-                ? 'この切り口には赤ピンの容疑者がいない。'
-                : 'この切り口はまだ分解されていない。EVIDENCE でツリーを作ろう。'}
+                ? '容疑者なし'
+                : '未分解'}
             </p>
           )}
           {cardIds.map((id) => {
