@@ -66,3 +66,38 @@ describe('modelView', () => {
     expect(Object.values(a.estimates)).toContain('＋8')
   })
 })
+
+import { SAMPLE_CASES } from '../data/cases'
+import { defaultOperationSheet } from './modelView'
+
+describe('defaultOperationSheet（全事件・全模範に共通のルール）', () => {
+  const count = (s: { measures: Record<string, { text: string }[]> }) =>
+    Object.values(s.measures).reduce((a, l) => a + l.filter((m) => m.text.trim()).length, 0)
+
+  it('施策が最も多い切り口（同数は先頭）を選び、施策はそのシートのノードに付いている', () => {
+    const rows: string[] = []
+    for (const c of SAMPLE_CASES) {
+      for (const st of getModelStudents(c.id)) {
+        for (const mode of ['GHOST', 'GOD'] as const) {
+          const v = buildModelView(st, mode)
+          const id = defaultOperationSheet(v.ws)
+          const counts = v.ws.sheets.map(count)
+          const max = Math.max(...counts)
+          const sheet = v.ws.sheets.find((s) => s.id === id)!
+          expect(count(sheet)).toBe(max)
+          expect(v.ws.sheets.findIndex((s) => s.id === id)).toBe(counts.indexOf(max))
+          for (const s of v.ws.sheets)
+            for (const nodeId of Object.keys(s.measures)) expect(s.tree.nodes[nodeId]).toBeDefined()
+          rows.push(`${c.id} 生徒${st.no} ${mode} → ${sheet.name} (${count(sheet)})`)
+        }
+      }
+    }
+    console.log(rows.join('\n'))
+  })
+
+  it('施策がなければ先頭', () => {
+    const v = buildModelView(MARUYAMA_STUDENTS[0], 'GOD')
+    const empty = { ...v.ws, sheets: v.ws.sheets.map((s) => ({ ...s, measures: {} })) }
+    expect(defaultOperationSheet(empty)).toBe(empty.sheets[0].id)
+  })
+})

@@ -194,3 +194,17 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     pitches,
   }
 }
+
+/** OPERATION の既定の切り口：施策が最も多いシート（同数は先頭）。施策がなければ先頭 */
+export function defaultOperationSheet(ws: EvidenceWorkspace): string {
+  let best = ws.sheets[0]?.id ?? 's1'
+  let max = 0
+  for (const s of ws.sheets) {
+    const n = Object.values(s.measures).reduce((a, l) => a + l.filter((m) => m.text.trim()).length, 0)
+    if (n > max) {
+      max = n
+      best = s.id
+    }
+  }
+  return best
+}

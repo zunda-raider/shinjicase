@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { getModelStudents } from '../data/models'
 import type { ModelMode as Mode } from '../data/models/types'
 import { pinKey, parsePinKey } from '../logic/workspace'
-import { buildModelView } from '../logic/modelView'
+import { buildModelView, defaultOperationSheet } from '../logic/modelView'
 import type { Phase } from '../types'
 import { PHASE_TITLES } from '../data/phases'
 import { EvidenceBoard } from './EvidenceBoard'
@@ -29,7 +29,8 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
   const [phase, setPhase] = useState<Phase>(
     initialPhase && initialPhase !== 'RESULT' ? initialPhase : 'INTAKE',
   )
-  const [sheetId, setSheetId] = useState<string | null>(null)
+  // 選んだ切り口は「生徒・モード・OPERATION か否か」が同じ間だけ有効（変わったら既定に戻す）
+  const [sheetSel, setSheetSel] = useState<{ ctx: string; id: string } | null>(null)
   const [pitchIdx, setPitchIdx] = useState(0)
   const [pickOpen, setPickOpen] = useState(false)
 
@@ -39,9 +40,12 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
   }, [caseId, idx, mode])
   if (!view) return null
 
-  const withMeasures = view.ws.sheets.find((s) => Object.values(s.measures).some((l) => l.length))
-  const defaultSheet = phase === 'OPERATION' && withMeasures ? withMeasures : view.ws.sheets[0]
-  const sheet = view.ws.sheets.find((s) => s.id === sheetId) ?? defaultSheet
+  const ctx = `${idx}-${mode}-${phase === 'OPERATION' ? 'op' : 'ev'}`
+  const sheetId = sheetSel?.ctx === ctx ? sheetSel.id : null
+  const setSheetId = (id: string | null) => setSheetSel(id ? { ctx, id } : null)
+  const defaultId = phase === 'OPERATION' ? defaultOperationSheet(view.ws) : view.ws.sheets[0].id
+  const sheet =
+    view.ws.sheets.find((s) => s.id === sheetId) ?? view.ws.sheets.find((s) => s.id === defaultId) ?? view.ws.sheets[0]
   const ws = { ...view.ws, activeSheetId: sheet.id }
   const pinNumbers: Record<string, number> = {}
   view.pins.forEach((k, i) => {
