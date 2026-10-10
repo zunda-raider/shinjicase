@@ -1,3 +1,4 @@
+import type { IdealAnswer } from '../data/ideals/types'
 import { formatClient, formatDefinition, formatTarget, otherPremises } from '../data/intake'
 import type {
   EvidenceWorkspace,
@@ -212,6 +213,8 @@ export interface ScorePacket {
     rank: number
   }[]
   warrantFinalAnswer: string
+  /** 模範解答の許容条件（ある事件のみ） */
+  rubric?: IdealAnswer
 }
 
 export function buildScorePacket(args: {
@@ -221,8 +224,9 @@ export function buildScorePacket(args: {
   motives: Record<string, string>
   warrant: WarrantState
   report: ReportState
+  rubric?: IdealAnswer | null
 }): ScorePacket {
-  const { intake, ws, pins, motives, warrant, report } = args
+  const { intake, ws, pins, motives, warrant, report, rubric } = args
   const axes = namedAxes(warrant)
   const measures = reportMeasures(ws, pins, warrant)
   const byKey = new Map(measures.map((m) => [m.key, m]))
@@ -296,5 +300,6 @@ export function buildScorePacket(args: {
       rank: m.rank,
     })),
     warrantFinalAnswer: warrant.finalAnswer,
+    ...(rubric ? { rubric } : {}),
   }
 }

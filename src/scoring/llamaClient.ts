@@ -61,7 +61,9 @@ function buildPrompt(packet: ScorePacket): string {
 - bottleneck: 容疑者（ボトルネック）選定と動機
 - measures: 打ち手がツリーに紐づいているか、最終報告の「向上」「問題点」の質
 - evaluation: 評価軸と○△✖の一貫性
-
+${packet.rubric ? `
+模範解答の許容条件（rubric）がある。requiredElements の合格ライン、acceptedFirstDecompositions、hotSpots（いずれかの系統に沿っているか）、rejected（不可）を基準に厳しめに採点し、講評で系統への一致・不足を指摘すること。
+` : ''}
 ケース:
 ${JSON.stringify(packet, null, 2)}`
 }

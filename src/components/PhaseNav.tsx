@@ -10,9 +10,11 @@ interface Props {
   onSubmit?: () => void
   submitDisabled?: boolean
   scoring?: boolean
+  archiveAvailable?: boolean
+  onArchive?: (tab: 'GHOST' | 'GOD') => void
 }
 
-export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, onArchive }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -38,6 +40,28 @@ export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, su
         ))}
       </div>
       <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} />
+      {onArchive && (
+        <span className="phase-nav__archive">
+          <button
+            type="button"
+            className="archive-badge archive-badge--ghost"
+            disabled={!archiveAvailable}
+            title="許容解"
+            onClick={() => onArchive('GHOST')}
+          >
+            ARCHIVE
+          </button>
+          <button
+            type="button"
+            className="archive-badge archive-badge--god"
+            disabled={!archiveAvailable}
+            title="完全解"
+            onClick={() => onArchive('GOD')}
+          >
+            GOD
+          </button>
+        </span>
+      )}
     </nav>
   )
 }

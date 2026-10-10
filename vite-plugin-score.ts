@@ -29,6 +29,7 @@ export function scoreApiPlugin(): Plugin {
           const packet = JSON.parse(raw) as unknown
           const prompt = `あなたはケース面接の採点官です。次のJSONケースを採点し、必ず次のJSONだけを返してください:
 {"total":0-100の整数,"grade":"S|A|B|C|D","breakdown":{"structure":0-25,"bottleneck":0-25,"measures":0-25,"evaluation":0-25},"comment":"日本語で2〜4文"}
+JSONに rubric（模範解答の許容条件）があれば、requiredElements・acceptedFirstDecompositions・hotSpots・rejected を基準に採点し、講評で系統への一致・不足を指摘すること。
 ケース:
 ${JSON.stringify(packet)}`
 

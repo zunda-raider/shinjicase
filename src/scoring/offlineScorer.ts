@@ -22,7 +22,8 @@ export function scoreOffline(packet: ScorePacket): ScoreResult {
       (filled(p.where) ? 2 : 0) +
       (filled(p.effect, 8) ? 3 : 0)
   }
-  const measures = clamp(pitchPts)
+  const rub = rubricHits(packet)
+  const measures = clamp(pitchPts + rub.bonus)
 
   const axes = packet.axes.filter((a) => a.trim()).length
   const rated = packet.allMeasures.filter(
@@ -40,6 +41,8 @@ export function scoreOffline(packet: ScorePacket): ScoreResult {
   if (pitches.some((p) => !filled(p.current, 8))) gaps.push('現状が薄い')
   if (pitches.some((p) => !filled(p.effect, 8))) gaps.push('効果が薄い')
   if (axes < 2) gaps.push('評価軸が足りない')
+  if (packet.rubric && !rub.lineage) gaps.push('模範の系統に沿っていない')
+  for (const r of rub.rejected) gaps.push(`不可：${r}`)
 
   const top = pitches[0]?.measureLabel
   const comment =
@@ -54,4 +57,27 @@ export function scoreOffline(packet: ScorePacket): ScoreResult {
     breakdown: { structure, bottleneck, measures, evaluation },
     comment,
   }
+}
+
+/** rubric があるとき、施策・台本のテキストでキーワードを軽く照合する */
+export function rubricHits(packet: ScorePacket): {
+  bonus: number
+  lineage: string | null
+  rejected: string[]
+} {
+  const r = packet.rubric
+  if (!r) return { bonus: 0, lineage: null, rejected: [] }
+  const text = [
+    ...packet.pitches.flatMap((p) => [p.measureLabel, p.current, p.goal, p.where, p.effect]),
+    ...packet.allMeasures.map((m) => m.text),
+    packet.warrantFinalAnswer,
+  ].join(' ')
+  let best: { name: string; hits: number } | null = null
+  for (const h of r.hotSpots) {
+    const hits = h.keywords.filter((k) => text.includes(k)).length
+    if (hits > 0 && (!best || hits > best.hits)) best = { name: h.name, hits }
+  }
+  const rejected = r.rejected.filter((x) => x.keywords.some((k) => text.includes(k))).map((x) => x.text)
+  const bonus = (best ? Math.min(3, best.hits) : 0) - rejected.length * 2
+  return { bonus, lineage: best?.name ?? null, rejected }
 }
