@@ -1097,8 +1097,9 @@
 /* OPERATION */
 .operation {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
-  gap: 1.25rem;
+  /* 左はコンパクトツリー幅まで、余りは右の作戦カードへ */
+  grid-template-columns: minmax(200px, 340px) minmax(0, 1fr);
+  gap: 0.85rem;
   align-items: start;
 }
 
@@ -1106,6 +1107,98 @@
   .operation {
     grid-template-columns: 1fr;
   }
+}
+
+.operation--compact .operation__tree {
+  padding: 0.55rem 0.45rem 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.operation--compact .operation__tree .board__header {
+  margin-bottom: 0.4rem;
+}
+
+.operation--compact .operation__tree .evidence__help {
+  margin-bottom: 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.operation--compact .operation__scroll {
+  max-height: 62vh;
+  width: 100%;
+  overflow: auto;
+}
+
+.operation--compact .evidence__canvas {
+  margin: 0;
+}
+
+.operation--compact .evidence__thread {
+  stroke-width: 1.5;
+}
+
+.operation--compact .operation-node {
+  padding: 0.15rem 0.35rem 0.2rem;
+  gap: 0.1rem;
+}
+
+.operation--compact .operation-node.is-pinned {
+  border-radius: 3px;
+}
+
+.operation--compact .operation-node .evidence-card__label {
+  font-size: 0.68rem;
+  line-height: 1.15;
+  -webkit-line-clamp: 2;
+}
+
+.operation--compact .operation-node.is-root .evidence-card__label {
+  font-size: 0.75rem;
+}
+
+.operation--compact .operation-node .evidence-card__tag {
+  font-size: 0.48rem;
+  top: 2px;
+  left: 3px;
+}
+
+.operation--compact .operation-node .evidence-card__no {
+  top: 2px;
+  left: 2px;
+  min-width: 14px;
+  padding: 0 0.15rem;
+  font-size: 0.52rem;
+  line-height: 12px;
+}
+
+.operation--compact .operation-node .evidence-card__redpin {
+  top: -10px;
+  right: 0;
+  font-size: 0.85rem;
+}
+
+.operation--compact .operation-node .evidence-card__pin-no {
+  top: 8px;
+  right: -6px;
+  min-width: 12px;
+  height: 12px;
+  font-size: 0.52rem;
+  line-height: 12px;
+}
+
+.operation--compact .operation-node__count {
+  font-size: 0.5rem;
+  padding: 0 0.2rem;
+}
+
+.operation--compact .evidence__op {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  font-size: 0.75rem;
+  border-width: 1px;
 }
 
 .operation__tree-header {
@@ -1133,6 +1226,7 @@
 
 .operation__scroll {
   max-height: 70vh;
+  padding: 0;
 }
 
 .operation-node {

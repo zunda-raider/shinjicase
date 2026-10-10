@@ -21,6 +21,32 @@ export const H_GAP = 48
 export const V_GAP = 64
 export const PAD = 32
 
+/** ツリー描画サイズ（EVIDENCE＝通常、OPERATION＝約半分のコンパクト） */
+export interface TreeSize {
+  cardW: number
+  cardH: number
+  hGap: number
+  vGap: number
+  pad: number
+}
+
+export const TREE_SIZE_NORMAL: TreeSize = {
+  cardW: CARD_W,
+  cardH: CARD_H,
+  hGap: H_GAP,
+  vGap: V_GAP,
+  pad: PAD,
+}
+
+/** OPERATION 左ペイン用。線寸法はだいたい半分、余白はそれ以上に詰める */
+export const TREE_SIZE_COMPACT: TreeSize = {
+  cardW: 78,
+  cardH: 40,
+  hGap: 20,
+  vGap: 28,
+  pad: 10,
+}
+
 export const ROOT_ID = 'root'
 export const MAX_PINS = 3
 
@@ -234,14 +260,18 @@ export function splitFormula(tree: EvidenceTree, id: EvidenceNodeId): string {
 /* 自動レイアウト（部分木の幅ベース、上から下へ）                      */
 /* ------------------------------------------------------------------ */
 
-export function layoutTree(tree: EvidenceTree): TreeLayout {
+export function layoutTree(
+  tree: EvidenceTree,
+  size: TreeSize = TREE_SIZE_NORMAL,
+): TreeLayout {
+  const { cardW, cardH, hGap, vGap, pad } = size
   const widths: Record<string, number> = {}
   const measure = (id: string): number => {
     const n = tree.nodes[id]
     const kids = n ? n.children.filter((c) => tree.nodes[c]) : []
     const sum =
-      kids.reduce((acc, c) => acc + measure(c), 0) + H_GAP * Math.max(0, kids.length - 1)
-    widths[id] = Math.max(CARD_W, sum)
+      kids.reduce((acc, c) => acc + measure(c), 0) + hGap * Math.max(0, kids.length - 1)
+    widths[id] = Math.max(cardW, sum)
     return widths[id]
   }
   const rootW = measure(tree.rootId)
@@ -249,22 +279,22 @@ export function layoutTree(tree: EvidenceTree): TreeLayout {
   const positions: TreeLayout['positions'] = {}
   const operators: TreeLayout['operators'] = []
   let maxDepth = 0
-  const rowY = (d: number) => PAD + d * (CARD_H + V_GAP)
+  const rowY = (d: number) => pad + d * (cardH + vGap)
 
   const place = (id: string, left: number, depth: number) => {
     const n = tree.nodes[id]
     if (!n) return
     maxDepth = Math.max(maxDepth, depth)
     const w = widths[id]
-    positions[id] = { x: left + w / 2 - CARD_W / 2, y: rowY(depth) }
+    positions[id] = { x: left + w / 2 - cardW / 2, y: rowY(depth) }
     const kids = n.children.filter((c) => tree.nodes[c])
     if (kids.length === 0) return
     const total =
-      kids.reduce((acc, c) => acc + widths[c], 0) + H_GAP * (kids.length - 1)
+      kids.reduce((acc, c) => acc + widths[c], 0) + hGap * (kids.length - 1)
     let cursor = left + (w - total) / 2
     kids.forEach((c) => {
       place(c, cursor, depth + 1)
-      cursor += widths[c] + H_GAP
+      cursor += widths[c] + hGap
     })
     for (let i = 0; i < kids.length - 1; i++) {
       const a = positions[kids[i]]
@@ -272,16 +302,16 @@ export function layoutTree(tree: EvidenceTree): TreeLayout {
       operators.push({
         parentId: id,
         index: i,
-        x: (a.x + CARD_W + b.x) / 2,
-        y: rowY(depth + 1) + CARD_H / 2,
+        x: (a.x + cardW + b.x) / 2,
+        y: rowY(depth + 1) + cardH / 2,
       })
     }
   }
-  place(tree.rootId, PAD, 0)
+  place(tree.rootId, pad, 0)
 
   return {
-    width: rootW + PAD * 2,
-    height: rowY(maxDepth) + CARD_H + PAD,
+    width: rootW + pad * 2,
+    height: rowY(maxDepth) + cardH + pad,
     positions,
     operators,
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CARD_W,
+  TREE_SIZE_COMPACT,
   addChild,
   addSibling,
   createTree,
@@ -134,6 +135,21 @@ describe('layoutTree', () => {
     }
   })
 })
+
+  it('compact size is about half and still non-overlapping', () => {
+    const t = exampleTree()
+    const L = layoutTree(t, TREE_SIZE_COMPACT)
+    const N = layoutTree(t)
+    expect(L.width).toBeLessThan(N.width * 0.6)
+    expect(L.height).toBeLessThan(N.height * 0.65)
+    const all = Object.entries(L.positions)
+    for (const [a, pa] of all) {
+      for (const [b, pb] of all) {
+        if (a >= b || pa.y !== pb.y) continue
+        expect(Math.abs(pa.x - pb.x)).toBeGreaterThanOrEqual(TREE_SIZE_COMPACT.cardW)
+      }
+    }
+  })
 
 describe('red pins on the tree', () => {
   it('pins up to 3 named non-root nodes and toggles off', () => {

@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import {
-  CARD_H,
-  CARD_W,
   LINK_SYMBOL,
+  TREE_SIZE_COMPACT,
   layoutTree,
   numberTree,
   subtreeIds,
@@ -35,7 +34,8 @@ export function OperationPhase({
   onRemoveMeasure,
 }: Props) {
   const tree = sheet.tree
-  const layout = useMemo(() => layoutTree(tree), [tree])
+  const size = TREE_SIZE_COMPACT
+  const layout = useMemo(() => layoutTree(tree, TREE_SIZE_COMPACT), [tree])
   const numbers = useMemo(() => numberTree(tree), [tree])
   const order = useMemo(() => subtreeIds(tree, tree.rootId), [tree])
 
@@ -103,7 +103,7 @@ export function OperationPhase({
   }
 
   return (
-    <div className="operation">
+    <div className="operation operation--compact">
       <section className="board operation__tree" aria-label="選んだツリー">
         <div className="board__header operation__tree-header">
           <h2>容疑者ツリー</h2>
@@ -127,7 +127,7 @@ export function OperationPhase({
             className="evidence__canvas"
             style={{ width: layout.width, height: layout.height }}
           >
-            <TreeThreads tree={tree} layout={layout} />
+            <TreeThreads tree={tree} layout={layout} size={size} />
             {Object.values(tree.nodes).map((n) => {
               const p = layout.positions[n.id]
               if (!p) return null
@@ -150,7 +150,7 @@ export function OperationPhase({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  style={{ left: p.x, top: p.y, width: CARD_W, height: CARD_H }}
+                  style={{ left: p.x, top: p.y, width: size.cardW, height: size.cardH }}
                   data-label={n.label}
                   data-number={numbers[n.id]}
                   onClick={() => selectFromTree(n.id)}
