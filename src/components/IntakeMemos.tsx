@@ -1,5 +1,6 @@
 import { formatClient, formatDefinition, formatTarget, otherPremises } from '../data/intake'
 import type { IntakeData } from '../types'
+import { isFactLabel } from '../logic/modelView'
 
 interface Props {
   intake: IntakeData
@@ -12,7 +13,7 @@ export function IntakeMemos({ intake }: Props) {
     { key: 'client', label: '依頼人', body: formatClient(intake) },
     { key: 'target', label: 'TARGET', body: formatTarget(intake.target) },
   ]
-  const others = otherPremises(intake)
+  const others = otherPremises(intake).filter((o) => !isFactLabel(o.label))
 
   return (
     <section className="intake-memos" aria-label="前提メモ">

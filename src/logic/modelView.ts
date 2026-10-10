@@ -11,6 +11,12 @@ import { MAX_PINS } from './evidenceTree'
  * プレイヤーの state / localStorage とは完全に別物（ここでは何も保存しない）。
  */
 
+/** 前提ではなく現状（事実）として扱うラベル */
+export const FACT_LABEL_RE = /^(現状|売上$|売上構成|売上推移|収支|実績|数字)|現状の数字|構成比/
+export function isFactLabel(label: string): boolean {
+  return FACT_LABEL_RE.test(label.trim())
+}
+
 const QA_RE = /〔質疑[^〕]*〕/
 
 /** 原文 → モード別の表示文。GHOST は〔質疑n〕を含む文を除く。 */
@@ -107,10 +113,13 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     if (!pins.includes(k)) pins.push(k)
   }
 
-  const premises = student.premises
+  const all = student.premises
     .map(([label, value]) => ({ label, value: modeText(value, mode) }))
     .filter((p) => p.value)
-  const current = student.current.map((c) => modeText(c, mode)).filter(Boolean)
+  // 前提条件だけをメモに。数字・構成・収支などの事実は現状へ
+  const premises = all.filter((p) => !isFactLabel(p.label))
+  const facts = all.filter((p) => isFactLabel(p.label)).map((p) => `${p.label}：${p.value}`)
+  const current = [...facts, ...student.current.map((c) => modeText(c, mode)).filter(Boolean)]
   const notes = student.notes
     .map((n) => ({ label: n.label, text: modeText(n.text, mode) }))
     .filter((n) => n.text)
