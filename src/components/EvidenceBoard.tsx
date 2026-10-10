@@ -181,7 +181,7 @@ export function EvidenceBoard({
       <div className="evidence__scroll">
         <div
           className="evidence__canvas"
-          style={{ width: layout.width, height: layout.height }}
+          style={{ width: layout.width, height: layout.height + (motives ? 26 : 0) }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedId(null)
           }}

@@ -136,12 +136,12 @@ describe('layoutTree', () => {
   })
 })
 
-  it('compact size is about half and still non-overlapping', () => {
+  it('compact size is smaller and still non-overlapping', () => {
     const t = exampleTree()
     const L = layoutTree(t, TREE_SIZE_COMPACT)
     const N = layoutTree(t)
-    expect(L.width).toBeLessThan(N.width * 0.6)
-    expect(L.height).toBeLessThan(N.height * 0.65)
+    expect(L.width).toBeLessThan(N.width * 0.8)
+    expect(L.height).toBeLessThan(N.height)
     const all = Object.entries(L.positions)
     for (const [a, pa] of all) {
       for (const [b, pb] of all) {

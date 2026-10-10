@@ -13,13 +13,13 @@ import type {
 /* 定数                                                                */
 /* ------------------------------------------------------------------ */
 
-export const CARD_W = 156
-export const CARD_H = 56
+export const CARD_W = 120
+export const CARD_H = 40
 /** 兄弟カードの間（演算子を置く幅） */
-export const H_GAP = 48
+export const H_GAP = 32
 /** 段と段の間 */
-export const V_GAP = 64
-export const PAD = 32
+export const V_GAP = 44
+export const PAD = 20
 
 /** ツリー描画サイズ（EVIDENCE＝通常、OPERATION＝約半分のコンパクト） */
 export interface TreeSize {
@@ -49,11 +49,11 @@ export const TREE_SIZE_COMPACT: TreeSize = {
 
 /** OPERATION 左ペイン用（EVIDENCE の約70%） */
 export const TREE_SIZE_OPERATION: TreeSize = {
-  cardW: 110,
-  cardH: 52,
-  hGap: 32,
-  vGap: 44,
-  pad: 16,
+  cardW: 96,
+  cardH: 40,
+  hGap: 24,
+  vGap: 32,
+  pad: 12,
 }
 
 export const ROOT_ID = 'root'
