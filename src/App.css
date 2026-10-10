@@ -3351,3 +3351,39 @@
   background: rgba(255, 248, 231, 0.04);
   font-size: 0.82rem;
 }
+
+/* ---------- GHOST / GOD MODE ---------- */
+.model-mode--ghost { background: linear-gradient(180deg, rgba(160, 190, 230, 0.12), transparent 240px); }
+.model-mode--god { background: linear-gradient(180deg, rgba(212, 170, 60, 0.16), transparent 240px); }
+.model-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 10px; margin-bottom: 8px;
+}
+.model-mode--ghost .model-banner {
+  background: rgba(200, 220, 245, 0.18); border: 1px dashed rgba(170, 200, 240, 0.7);
+  backdrop-filter: blur(4px); color: #dce8ff;
+}
+.model-mode--god .model-banner {
+  background: linear-gradient(90deg, #6b4b0f, #c9a23a 50%, #6b4b0f); border: 1px solid #f2d27a; color: #fff6d8;
+}
+.model-banner__title { letter-spacing: 0.08em; font-size: 15px; }
+.model-banner__case { font-size: 13px; opacity: 0.9; }
+.model-banner__students { display: inline-flex; gap: 4px; }
+.model-banner__students button {
+  width: 30px; height: 30px; border-radius: 6px; border: 1px solid currentColor;
+  background: transparent; color: inherit; cursor: pointer; font-weight: 700;
+}
+.model-banner__students button.is-active { background: rgba(255, 255, 255, 0.85); color: #222; }
+.model-banner__reach { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.25); }
+.model-banner__rubric { margin-left: auto; }
+.model-list { display: grid; gap: 6px; margin: 8px 0 14px; }
+.model-list__row { display: grid; grid-template-columns: 180px 1fr; gap: 10px; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.model-list__row dt { font-weight: 700; opacity: 0.8; }
+.model-list__row dd { margin: 0; white-space: pre-wrap; }
+.model-bullets { margin: 6px 0 12px 18px; line-height: 1.7; }
+.model-focus { font-size: 13px; margin: 6px 0; }
+.model-empty { opacity: 0.6; }
+.plan-card__text { flex: 1; font-size: 13px; line-height: 1.5; }
+.plan-card__note { display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 4px; background: #333; color: #ffd76a; }
+.evidence-card__qa { position: absolute; right: 4px; bottom: 4px; }
+.evidence.is-readonly .evidence-card { cursor: default; }

@@ -10,7 +10,8 @@ import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
 import { IntakeSetup } from './components/IntakeSetup'
 import { TitleScreen } from './components/TitleScreen'
-import { ArchiveViewer, type ArchiveTab } from './components/ArchiveViewer'
+import type { ArchiveTab } from './components/ArchiveViewer'
+import { ModelMode } from './components/ModelMode'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
 import { SuspectList } from './components/SuspectList'
@@ -108,7 +109,7 @@ export default function App() {
   const sample = getCase(caseId)
   const [intake, setIntake] = useState<IntakeData>(() => loadCaseIntake(loadActiveCaseId()))
   const [onTitle, setOnTitle] = useState(true)
-  const [archive, setArchive] = useState<{ caseId: string; tab: ArchiveTab } | null>(null)
+  const [model, setModel] = useState<{ caseId: string; tab: ArchiveTab; phase?: Phase } | null>(null)
   const [phase, setPhase] = useState<Phase>('INTAKE')
   const metric = intakeMetric(intake)
   const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() =>
@@ -372,15 +373,18 @@ export default function App() {
     setIntake({ ...sample.intake, status: 'player', statement: sample.intake.statement })
   }
 
-  const archiveOverlay = archive && (
-    <ArchiveViewer
-      key={`${archive.caseId}-${archive.tab}`}
-      caseId={archive.caseId}
-      caseLabel={getCase(archive.caseId).label}
-      initialTab={archive.tab}
-      onClose={() => setArchive(null)}
-    />
-  )
+  if (model) {
+    return (
+      <ModelMode
+        key={model.caseId}
+        caseId={model.caseId}
+        caseLabel={getCase(model.caseId).label}
+        initialMode={model.tab}
+        initialPhase={model.phase}
+        onExit={() => setModel(null)}
+      />
+    )
+  }
 
   if (onTitle) {
     return (
@@ -388,9 +392,8 @@ export default function App() {
         <TitleScreen
           activeId={caseId}
           onOpen={handleOpenCase}
-          onArchive={(id, tab) => setArchive({ caseId: id, tab })}
+          onArchive={(id, tab) => setModel({ caseId: id, tab })}
         />
-        {archiveOverlay}
       </>
     )
   }
@@ -409,7 +412,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} archiveAvailable={hasArchive(caseId)} onArchive={(tab) => setArchive({ caseId, tab })} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} archiveAvailable={hasArchive(caseId)} onArchive={(tab) => setModel({ caseId, tab, phase })} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 
@@ -564,7 +567,6 @@ export default function App() {
       <footer className="app__footer">
         ケース面接モック · サンプル事件6件 · INTAKE〜RESULT
       </footer>
-      {archiveOverlay}
     </div>
   )
 }

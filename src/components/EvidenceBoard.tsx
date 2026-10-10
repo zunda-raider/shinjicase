@@ -37,6 +37,10 @@ interface Props {
   tabs?: ReactNode
   onReset: () => void
   onLoadExample: () => void
+  /** 閲覧専用（GHOST/GOD）：編集・ピン操作なし */
+  readOnly?: boolean
+  /** ノードID → 質疑チップ */
+  nodeBadges?: Record<EvidenceNodeId, string>
 }
 
 export function EvidenceBoard({
@@ -50,6 +54,8 @@ export function EvidenceBoard({
   onReset,
   onLoadExample,
   tabs,
+  readOnly,
+  nodeBadges,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
@@ -57,7 +63,7 @@ export function EvidenceBoard({
   const layout = useMemo(() => layoutTree(tree), [tree])
   const numbers = useMemo(() => numberTree(tree), [tree])
   const nodes = Object.values(tree.nodes)
-  const isDecompose = mode === 'decompose'
+  const isDecompose = !readOnly && mode === 'decompose'
   const activeEditing = isDecompose ? editingId : null
 
   // Delete キーで選択中カード（と子孫）を削除（分解モードのみ）
@@ -112,13 +118,14 @@ export function EvidenceBoard({
   }
 
   function handleCardClick(id: EvidenceNodeId) {
+    if (readOnly) return
     if (isDecompose) setSelectedId(id)
     else onTogglePin(id)
   }
 
   return (
-    <main className={`board evidence is-${mode}`} aria-label="捜査ボード">
-      <div className="board__header evidence__toolbar">
+    <main className={`board evidence is-${readOnly ? 'readonly' : mode}`} aria-label="捜査ボード">
+      {!readOnly && <div className="board__header evidence__toolbar">
         <div className="evidence__modes" role="group" aria-label="モード">
           <button
             type="button"
@@ -158,8 +165,7 @@ export function EvidenceBoard({
             リセット
           </button>
         </div>
-      </div>
-
+      </div>}
 
       {tabs}
 
@@ -190,7 +196,7 @@ export function EvidenceBoard({
                   isDecompose && selectedId === n.id ? 'is-selected' : '',
                   !n.label.trim() ? 'is-blank' : '',
                   pinned ? 'is-pinned' : '',
-                  !isDecompose && pinnable && !pinned && totalPins < MAX_PINS
+                  !readOnly && !isDecompose && pinnable && !pinned && totalPins < MAX_PINS
                     ? 'is-pinnable'
                     : '',
                 ]
@@ -220,6 +226,7 @@ export function EvidenceBoard({
                   </span>
                 )}
 
+                {nodeBadges?.[n.id] && <span className="qa-chip evidence-card__qa">{nodeBadges[n.id]}</span>}
                 {isEditing ? (
                   <input
                     className="evidence-card__input"

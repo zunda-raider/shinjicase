@@ -12,13 +12,14 @@ interface Props {
   scoring?: boolean
   archiveAvailable?: boolean
   onArchive?: (tab: 'GHOST' | 'GOD') => void
+  readOnly?: boolean
 }
 
-export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, onArchive }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, onArchive, readOnly }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
-        {PHASES.map((p, i) => (
+        {PHASES.filter((p) => !readOnly || p.id !== 'RESULT').map((p, i) => (
           <span key={p.id} className="phase-nav__item-wrap">
             {i > 0 && <span className="phase-nav__sep">›</span>}
             <button
@@ -39,7 +40,7 @@ export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, su
           </span>
         ))}
       </div>
-      <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} />
+      <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} readOnly={readOnly} />
       {onArchive && (
         <span className="phase-nav__archive">
           <button

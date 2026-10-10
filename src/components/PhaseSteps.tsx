@@ -12,10 +12,12 @@ interface Props {
   onSubmit?: () => void
   submitDisabled?: boolean
   scoring?: boolean
+  /** 閲覧モード：提出・RESULT なし */
+  readOnly?: boolean
 }
 
 /** 「‹ 前のフェーズ」「次のフェーズへ ›」 */
-export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, submitDisabled, scoring }: Props) {
+export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, submitDisabled, scoring, readOnly }: Props) {
   const i = PHASES.findIndex((p) => p.id === active)
   const prev = PHASES[i - 1]
   const next = PHASES[i + 1]
@@ -52,14 +54,14 @@ export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, subm
         ) : (
           <span />
         )}
-        <button
+        {readOnly ? <span className="phase-steps__end-hint">閲覧のみ</span> : <button
           type="button"
           className="btn btn--primary phase-steps__next phase-steps__submit"
           disabled={submitDisabled || scoring}
           onClick={() => onSubmit?.()}
         >
           {scoring ? '採点中…' : hasScore ? '再提出して採点 ›' : '提出して採点 ›'}
-        </button>
+        </button>}
       </div>
     )
   }

@@ -11,6 +11,8 @@ import { circled, pinMeasureStatus } from '../logic/operation'
 import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
+import { QaText } from './QaText'
+import { measureKey } from '../logic/warrant'
 
 interface Props {
   ws: EvidenceWorkspace
@@ -22,6 +24,10 @@ interface Props {
   onAddMeasure: (nodeId: EvidenceNodeId, after?: string) => string
   onUpdateMeasure: (nodeId: EvidenceNodeId, measureId: string, text: string) => void
   onRemoveMeasure: (nodeId: EvidenceNodeId, measureId: string) => void
+  /** 閲覧専用（GHOST/GOD） */
+  readOnly?: boolean
+  /** measureKey → 見込みなどの注記 */
+  measureNotes?: Record<string, string>
 }
 
 /** ⅳ 打ち手立案：左に番号つきツリー（読み取り専用）、右に番号ごとの作戦カード */
@@ -33,6 +39,8 @@ export function OperationPhase({
   onAddMeasure,
   onUpdateMeasure,
   onRemoveMeasure,
+  readOnly,
+  measureNotes,
 }: Props) {
   const tree = sheet.tree
   const size = TREE_SIZE_OPERATION
@@ -260,7 +268,7 @@ export function OperationPhase({
       </section>
 
       <section className="operation__plans" aria-label="作戦カード">
-        {missing.length > 0 && (
+        {!readOnly && missing.length > 0 && (
           <ul className="operation__warnings" aria-label="作戦のない容疑者">
             {missing.map((m) => (
               <li key={m.key}>
@@ -329,6 +337,17 @@ export function OperationPhase({
                     {list.map((m, i) => (
                       <li key={m.id}>
                         <span className="plan-card__bullet">{i + 1}.</span>
+                        {readOnly ? (
+                          <span className="plan-card__text">
+                            <QaText text={m.text} />
+                            {measureNotes?.[measureKey(sheet.id, id, m.id)] && (
+                              <span className="plan-card__note">
+                                見込み {measureNotes[measureKey(sheet.id, id, m.id)]}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <>
                         <input
                           type="text"
                           value={m.text}
@@ -353,13 +372,17 @@ export function OperationPhase({
                         >
                           ✕
                         </button>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
                 )}
-                <button type="button" className="plan-card__add" onClick={() => add(id)}>
-                  ＋施策を追加
-                </button>
+                {!readOnly && (
+                  <button type="button" className="plan-card__add" onClick={() => add(id)}>
+                    ＋施策を追加
+                  </button>
+                )}
               </article>
             )
           })}

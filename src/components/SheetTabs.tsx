@@ -9,6 +9,8 @@ interface Props {
   onRename: (id: SheetId, name: string) => void
   onAdd: () => void
   onRemove: (id: SheetId) => void
+  readOnly?: boolean
+  badges?: Record<SheetId, string>
 }
 
 /** 切り口（同じ指標に対する別の分解）のタブ */
@@ -20,6 +22,8 @@ export function SheetTabs({
   onRename,
   onAdd,
   onRemove,
+  readOnly,
+  badges,
 }: Props) {
   const [editing, setEditing] = useState<SheetId | null>(null)
   const [draft, setDraft] = useState('')
@@ -59,7 +63,7 @@ export function SheetTabs({
             data-sheet={s.name}
             title="クリックで切替・ダブルクリックか ✎ で名前変更"
             onClick={() => onSelect(s.id)}
-            onDoubleClick={() => startEdit(s)}
+            onDoubleClick={() => !readOnly && startEdit(s)}
           >
             {editing === s.id ? (
               <input
@@ -81,7 +85,8 @@ export function SheetTabs({
             ) : (
               <span className="sheet-tab__name">{s.name}</span>
             )}
-            {editing !== s.id && (
+            {badges?.[s.id] && <span className="qa-chip">{badges[s.id]}</span>}
+            {!readOnly && editing !== s.id && (
               <button
                 type="button"
                 className="sheet-tab__edit"
@@ -100,7 +105,7 @@ export function SheetTabs({
                 📌{pins}
               </span>
             )}
-            {sheets.length > 1 && editing !== s.id && (
+            {!readOnly && sheets.length > 1 && editing !== s.id && (
               <button
                 type="button"
                 className="sheet-tab__close"
@@ -117,9 +122,9 @@ export function SheetTabs({
           </div>
         )
       })}
-      <button type="button" className="sheet-tabs__add" onClick={onAdd} title="同じ指標で別の分解を考える">
+      {!readOnly && <button type="button" className="sheet-tabs__add" onClick={onAdd} title="同じ指標で別の分解を考える">
         ＋ 切り口を追加
-      </button>
+      </button>}
     </div>
   )
 }
