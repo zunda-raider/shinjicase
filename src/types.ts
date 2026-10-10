@@ -26,6 +26,7 @@ export type Phase =
   | 'OPERATION'
   | 'WARRANT'
   | 'REPORT'
+  | 'RESULT'
 
 export type CaptainState =
   | 'idle'

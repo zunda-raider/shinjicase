@@ -12,7 +12,8 @@
 | ⅲ ボトルネック特定 | **EVIDENCE（分解と容疑者）** — 容疑者モード | 動作 | 同じツリーのカードに赤ピン（最大3）。右の欄に動機を書いて CAPTAIN に提出 |
 | ⅳ 打ち手立案 | **OPERATION（逮捕作戦）** | 動作 | 左に番号つきのツリー（容疑者は赤丸）、右に番号ごとの作戦カード。施策は手で入力 |
 | ⅴ 打ち手評価 | **WARRANT（令状請求）** | 動作 | 評価軸を自分で2〜3本入力し、OPERATION の施策に ○△✖。優先順位を自動表示、最終回答（3行） |
-| ⅵ 最終まとめ | **REPORT（最終報告）** | 動作 | 施策ごと（最大2）の1分台本タブ：前提／現状／ゴール／どこに効くか／効果。提出→Llama またはオフライン採点 |
+| ⅵ 最終まとめ | **REPORT（最終報告）** | 動作 | 施策ごと（最大2）の1分台本タブ。提出ボタン常時表示 → RESULT |
+| 採点掲示 | **RESULT** | 動作 | 西部劇掲示ボード。構造化／ボトルネック／打ち手／評価の各点＋総合＋講評。戻って直す／再提出 |
 | 面接官の突っ込み | **CAPTAIN（署長）** | 動作 | EVIDENCE／OPERATION／WARRANT のスクリプト＋ REPORT の採点講評 |
 
 フェーズナビ：INTAKE › EVIDENCE（分解と容疑者）› OPERATION › WARRANT（クリックで行き来。起動時は EVIDENCE）  
@@ -90,7 +91,8 @@
 1. WARRANT のあとに **「次のフェーズへ ›」** で REPORT へ。
 2. WARRANT 順位の施策から **最大2つ** にチェック（タブが1枚＝施策1つ）。
 3. 各タブで **前提（定義・依頼人・目標）／現状／ゴール／施策（どこに効くか）／効果** を一目で編集。前提・ゴールは INTAKE から仮置き。
-4. **提出して採点** → Llama があれば講評つき総合点。なければ **オフライン採点**（画面に明示）。
+4. **提出して採点**（常時表示）→ **RESULT** 画面へ。西部劇掲示で各評価項目・総合点・講評を表示。
+5. RESULT から **戻って台本を直す**／**再提出して採点** が可能。
 
 ### Llama のつなぎ方
 
@@ -142,7 +144,8 @@ npm test        # ロジックテスト（CAPTAIN・ツリー・切り口・施�
 - `src/components/SheetTabs.tsx` — 切り口（シート）のタブ（✎ で名前変更）
 - `src/components/OperationPhase.tsx` — OPERATION（左：番号つきツリー、右：作戦カード）
 - `src/components/WarrantPhase.tsx` — WARRANT（評価軸・○△✖ マトリクス・優先順位・最終回答）
-- `src/components/ReportPhase.tsx` — REPORT（施策タブの1分台本・提出・採点表示）
+- `src/components/ReportPhase.tsx` — REPORT（施策タブの1分台本・提出）
+- `src/components/ResultPhase.tsx` — RESULT（西部劇掲示の採点結果）
 - `src/scoring/` — Llama クライアント＋オフライン採点
 - `vite-plugin-score.ts` — 開発サーバの `/api/score`（Ollama / OpenAI 互換）
 - `src/components/TreeThreads.tsx` — ツリーの糸（EVIDENCE と OPERATION で共通）

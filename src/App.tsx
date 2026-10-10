@@ -11,6 +11,7 @@ import { SheetTabs } from './components/SheetTabs'
 import { StubPhase } from './components/StubPhase'
 import { SuspectList } from './components/SuspectList'
 import { ReportPhase } from './components/ReportPhase'
+import { ResultPhase } from './components/ResultPhase'
 import { WarrantPhase } from './components/WarrantPhase'
 import { STUB_INTAKE, formatTarget } from './data/intake'
 import { PHASES } from './data/phases'
@@ -99,6 +100,7 @@ const PHASE_TITLES: Record<Phase, string> = {
   OPERATION: '逮捕作戦 — OPERATION',
   WARRANT: '令状請求 — WARRANT',
   REPORT: '最終報告 — REPORT',
+  RESULT: '採点掲示 — RESULT',
 }
 
 function readJson(key: string): unknown {
@@ -269,9 +271,10 @@ export default function App() {
     setReport(setFeaturedMeasures(reportView, next, reportMeasureList, intake))
   }
 
-  async function handleSubmitReport() {
+  async function handleSubmitReport(goToResult = true) {
     setScoring(true)
     setScoreError(null)
+    if (goToResult) setPhase('RESULT')
     try {
       const packet = buildScorePacket({
         intake,
@@ -391,7 +394,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} />
 
       <IntakeMemos intake={intake} />
 
@@ -498,17 +501,29 @@ export default function App() {
           onToggleFeatured={handleToggleFeatured}
           onSelectTab={(i) => setReport(setActiveCard(reportView, i))}
           onChangeCard={(i, patch) => setReport(updatePitchCard(reportView, i, patch))}
-          onSubmit={handleSubmitReport}
+          onSubmit={() => void handleSubmitReport(true)}
           scoring={scoring}
-          score={score}
           error={scoreError}
+          hasScore={score != null}
+          onOpenResult={() => setPhase('RESULT')}
         />
       )}
 
-      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} />
+      {phase === 'RESULT' && (
+        <ResultPhase
+          score={score}
+          scoring={scoring}
+          error={scoreError}
+          onBack={() => setPhase('REPORT')}
+          onResubmit={() => void handleSubmitReport(true)}
+        />
+      )}
+
+
+      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} />
 
       <footer className="app__footer">
-        ケース面接モック · EVIDENCE〜REPORT（ⅱ〜ⅵ）が動作 · ⅰ は仮置き
+        ケース面接モック · EVIDENCE〜RESULT が動作 · ⅰ は仮置き
       </footer>
     </div>
   )

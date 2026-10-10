@@ -2,7 +2,6 @@ import { GRADE_LABEL, namedAxes } from '../logic/warrant'
 import type { RankedMeasure } from '../logic/warrant'
 import { MAX_FEATURED } from '../logic/report'
 import type { ReportPitchCard, ReportState, WarrantState } from '../types'
-import type { ScoreResult } from '../scoring/types'
 
 interface Props {
   measures: RankedMeasure[]
@@ -13,18 +12,13 @@ interface Props {
   onChangeCard: (index: number, patch: Partial<Omit<ReportPitchCard, 'measureKey'>>) => void
   onSubmit: () => void
   scoring: boolean
-  score: ScoreResult | null
   error: string | null
+  /** 直近の提出があるとき、RESULT への導線を出す */
+  hasScore: boolean
+  onOpenResult: () => void
 }
 
-const BREAKDOWN_LABEL: Record<keyof ScoreResult['breakdown'], string> = {
-  structure: '構造化',
-  bottleneck: 'ボトルネック選定',
-  measures: '打ち手の対応',
-  evaluation: '評価の一貫性',
-}
-
-/** ⅵ 最終報告：施策ごとの1分台本タブ（前提〜効果が一覧）→ 提出 */
+/** ⅵ 最終報告：施策ごとの1分台本。提出ボタンは常時表示 → RESULT へ。 */
 export function ReportPhase({
   measures,
   warrant,
@@ -34,8 +28,9 @@ export function ReportPhase({
   onChangeCard,
   onSubmit,
   scoring,
-  score,
   error,
+  hasScore,
+  onOpenResult,
 }: Props) {
   const axes = namedAxes(warrant)
   const featuredKeys = new Set(report.cards.map((c) => c.measureKey))
@@ -54,8 +49,28 @@ export function ReportPhase({
         <p className="evidence__help">
           WARRANT の施策から最大{MAX_FEATURED}つ選び、各タブで
           <b>前提／現状／ゴール／施策（どこに効くか）／効果</b>
-          を一目で編集する。提出すると Llama（またはオフライン）が採点する。
+          を一目で編集する。提出すると採点結果（RESULT）画面へ進む。
         </p>
+
+        <div className="report-submit report-submit--bar" aria-label="提出">
+          <button
+            type="button"
+            className="btn btn--primary report-submit__btn"
+            disabled={scoring || report.cards.length === 0}
+            onClick={onSubmit}
+          >
+            {scoring ? '採点中…' : hasScore ? '再提出して採点' : '提出して採点'}
+          </button>
+          <p className="report-submit__hint">
+            Llama 接続時は講評つき。未接続時はオフライン採点。結果は RESULT（西部劇掲示）に出ます。
+          </p>
+          {error && <p className="report-submit__err">{error}</p>}
+          {hasScore && (
+            <button type="button" className="report-score-toggle" onClick={onOpenResult}>
+              採点結果（RESULT）を見る ›
+            </button>
+          )}
+        </div>
 
         <section className="report-pick" aria-label="発表する施策を選ぶ">
           <h3 className="report-block__title">発表する施策（最大{MAX_FEATURED}）</h3>
@@ -221,69 +236,6 @@ export function ReportPhase({
           </>
         )}
       </section>
-
-      <aside className="report__side">
-        <div className="report-submit">
-          <button
-            type="button"
-            className="btn btn--primary report-submit__btn"
-            disabled={scoring || report.cards.length === 0}
-            onClick={onSubmit}
-          >
-            {scoring ? '採点中…' : score ? '再提出して採点' : '提出して採点'}
-          </button>
-          <p className="report-submit__hint">
-            Llama 接続時は講評つき。未接続時は「オフライン採点」に切り替わります。
-          </p>
-          {error && <p className="report-submit__err">{error}</p>}
-        </div>
-
-        {score && (
-          <div
-            className={`report-score ${score.source === 'offline' ? 'is-offline' : 'is-llama'}`}
-            aria-live="polite"
-          >
-            <div className="report-score__head">
-              <span className="report-score__label">総合点</span>
-              {score.source === 'offline' ? (
-                <span className="report-score__badge">オフライン採点</span>
-              ) : (
-                <span className="report-score__badge is-live">
-                  Llama{score.model ? ` · ${score.model}` : ''}
-                </span>
-              )}
-            </div>
-            <div className="report-score__total">
-              <span className="report-score__num">{score.total}</span>
-              <span className="report-score__grade">{score.grade}</span>
-            </div>
-            <ul className="report-score__break">
-              {(Object.keys(BREAKDOWN_LABEL) as (keyof ScoreResult['breakdown'])[]).map((k) => (
-                <li key={k}>
-                  <span>{BREAKDOWN_LABEL[k]}</span>
-                  <span>{score.breakdown[k]}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="report-score__comment">{score.comment}</p>
-          </div>
-        )}
-
-        {!score && !scoring && (
-          <div className="operation-captain">
-            <div className="operation-captain__head">
-              <span className="captain-panel__avatar" aria-hidden="true">
-                ★
-              </span>
-              <span className="captain-panel__rank">CAPTAIN</span>
-            </div>
-            <ul className="operation-captain__lines">
-              <li>CAPTAIN「施策を最大2つ選べ。タブごとに前提から効果まで一目で話せるようにしろ。」</li>
-              <li>CAPTAIN「書けたら提出だ。点数を出す。」</li>
-            </ul>
-          </div>
-        )}
-      </aside>
     </div>
   )
 }
