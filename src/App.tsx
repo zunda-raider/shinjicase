@@ -8,12 +8,13 @@ import { PhaseNav } from './components/PhaseNav'
 import { PhaseSteps } from './components/PhaseSteps'
 import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
-import { StubPhase } from './components/StubPhase'
+import { CasePicker } from './components/CasePicker'
 import { SuspectList } from './components/SuspectList'
 import { ReportPhase } from './components/ReportPhase'
 import { ResultPhase } from './components/ResultPhase'
 import { WarrantPhase } from './components/WarrantPhase'
-import { STUB_INTAKE, formatTarget } from './data/intake'
+import { formatTarget } from './data/intake'
+import { applySampleSuspects, getCase } from './data/cases'
 import { PHASES } from './data/phases'
 import {
   REVISE_BONUS,
@@ -21,12 +22,9 @@ import {
   evaluateSubmission,
 } from './logic/captain'
 import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
-import { isSuspectState } from './logic/operation'
-import type { SuspectState } from './logic/operation'
 import {
   collectMeasures,
   isFullyRated,
-  loadWarrantState,
   namedAxes,
   pruneWarrant,
   addAxis as warrantAddAxis,
@@ -34,26 +32,34 @@ import {
   renameAxis as warrantRenameAxis,
   setFinalAnswer,
   setRating,
+  createWarrantState,
 } from './logic/warrant'
 import {
   buildScorePacket,
   ensureDefaultCards,
-  loadReportState,
   pruneReportCards,
   reportMeasures,
   setActiveCard,
   setFeaturedMeasures,
   updatePitchCard,
+  createReportState,
 } from './logic/report'
 import { scoreCase } from './scoring/llamaClient'
 import type { ScoreResult } from './scoring/types'
 import {
+  caseStorageKey,
+  loadActiveCaseId,
+  loadCaseReport,
+  loadCaseSuspects,
+  loadCaseWarrant,
+  loadCaseWorkspace,
+  saveActiveCaseId,
+  writeJson,
+} from './logic/caseStorage'
+import {
   activeSheet,
   addMeasure,
   addSheet,
-  createWorkspace,
-  exampleWorkspace,
-  migrateWorkspace,
   parsePinKey,
   pinKey,
   removeMeasure,
@@ -81,18 +87,6 @@ import type {
 } from './types'
 import './App.css'
 
-/** v4 = 切り口（シート）＋施策 */
-const WORKSPACE_STORAGE_KEY = 'shinjicase.evidence.v4'
-/** v3 = 切り口のみ（施策なし）、v2 = 単一ツリー。読み込んだら v4 に移行して削除 */
-const V3_STORAGE_KEY = 'shinjicase.evidence.v3'
-const V2_STORAGE_KEY = 'shinjicase.evidence.v2'
-/** 赤ピン＋動機 */
-const SUSPECT_STORAGE_KEY = 'shinjicase.suspects.v1'
-/** ⅴ 評価軸・評点・最終回答 */
-const WARRANT_STORAGE_KEY = 'shinjicase.warrant.v1'
-const REPORT_STORAGE_KEY = 'shinjicase.report.v1'
-/** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
-const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
 const PHASE_TITLES: Record<Phase, string> = {
   INTAKE: '事件受理 — INTAKE',
@@ -103,60 +97,26 @@ const PHASE_TITLES: Record<Phase, string> = {
   RESULT: '採点掲示 — RESULT',
 }
 
-function readJson(key: string): unknown {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as unknown) : null
-  } catch {
-    return null
-  }
-}
-
-function loadWorkspace(metric: string): EvidenceWorkspace {
-  try {
-    LEGACY_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k))
-    const ws = migrateWorkspace(
-      {
-        v4: readJson(WORKSPACE_STORAGE_KEY),
-        v3: readJson(V3_STORAGE_KEY),
-        v2: readJson(V2_STORAGE_KEY),
-      },
-      metric,
-    )
-    localStorage.removeItem(V3_STORAGE_KEY)
-    localStorage.removeItem(V2_STORAGE_KEY)
-    if (ws) return ws
-  } catch {
-    // 壊れた・互換のないデータは捨てて作り直す
-  }
-  return createWorkspace(metric)
-}
-
-function loadSuspects(): SuspectState {
-  const v = readJson(SUSPECT_STORAGE_KEY)
-  return isSuspectState(v) ? v : { pins: [], motives: {} }
-}
-
-function loadWarrant(): WarrantState {
-  return loadWarrantState(readJson(WARRANT_STORAGE_KEY))
-}
-
-function loadReport(): ReportState {
-  return loadReportState(readJson(REPORT_STORAGE_KEY))
-}
 
 export default function App() {
-  const intake = STUB_INTAKE
-  const [phase, setPhase] = useState<Phase>('EVIDENCE')
+  const [caseId, setCaseId] = useState(() => loadActiveCaseId())
+  const sample = getCase(caseId)
+  const intake = sample.intake
+  const [phase, setPhase] = useState<Phase>('INTAKE')
   const metric = intake.target.metric
-  const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() => loadWorkspace(metric))
+  const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() =>
+    loadCaseWorkspace(loadActiveCaseId(), getCase(loadActiveCaseId()).intake.target.metric),
+  )
   const [mode, setMode] = useState<BoardMode>('decompose')
 
-  const [initialSuspects] = useState(loadSuspects)
-  const [pins, setPins] = useState<CandidateId[]>(initialSuspects.pins)
-  const [motives, setMotives] = useState<Record<CandidateId, string>>(initialSuspects.motives)
-  const [warrant, setWarrant] = useState<WarrantState>(loadWarrant)
-  const [report, setReport] = useState<ReportState>(() => loadReport())
+  const [pins, setPins] = useState<CandidateId[]>(
+    () => loadCaseSuspects(loadActiveCaseId()).pins,
+  )
+  const [motives, setMotives] = useState<Record<CandidateId, string>>(
+    () => loadCaseSuspects(loadActiveCaseId()).motives,
+  )
+  const [warrant, setWarrant] = useState<WarrantState>(() => loadCaseWarrant(loadActiveCaseId()))
+  const [report, setReport] = useState<ReportState>(() => loadCaseReport(loadActiveCaseId()))
   const [scoring, setScoring] = useState(false)
   const [score, setScore] = useState<ScoreResult | null>(null)
   const [scoreError, setScoreError] = useState<string | null>(null)
@@ -167,31 +127,23 @@ export default function App() {
   const [lastScored, setLastScored] = useState(0)
 
   useEffect(() => {
-    try {
-      localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(workspace))
-    } catch {
-      // 保存できなくても動作は続ける
-    }
-  }, [workspace])
+    saveActiveCaseId(caseId)
+  }, [caseId])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(SUSPECT_STORAGE_KEY, JSON.stringify({ pins, motives }))
-    } catch {
-      // 保存できなくても動作は続ける
-    }
-  }, [pins, motives])
+    writeJson(caseStorageKey(caseId, 'evidence'), workspace)
+  }, [caseId, workspace])
+
+  useEffect(() => {
+    writeJson(caseStorageKey(caseId, 'suspects'), { pins, motives })
+  }, [caseId, pins, motives])
 
   // 消えた施策の評点は保存時に捨てる（表示用は下で prune）
   const warrantView = useMemo(() => pruneWarrant(warrant, syncRootLabel(workspace, metric)), [warrant, workspace, metric])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(WARRANT_STORAGE_KEY, JSON.stringify(warrantView))
-    } catch {
-      // 保存できなくても動作は続ける
-    }
-  }, [warrantView])
+    writeJson(caseStorageKey(caseId, 'warrant'), warrantView)
+  }, [caseId, warrantView])
 
   // ルートは常に ⅰ の指標（INTAKE が変われば全切り口のルートも変わる）
   const ws = useMemo(() => syncRootLabel(workspace, metric), [workspace, metric])
@@ -202,13 +154,13 @@ export default function App() {
   const candidates = useMemo(() => workspaceCandidates(ws), [ws])
   const caseData: CaseData = useMemo(
     () => ({
-      id: 'evidence-tree',
+      id: sample.id,
       title: `CASE FILE: ${intake.client.name} — 目標 ${formatTarget(intake.target)}`,
-      briefing: '',
-      idealPrimeCount: Math.max(1, Math.min(MAX_PINS, candidates.length)),
+      briefing: sample.briefing,
+      idealPrimeCount: Math.max(1, Math.min(MAX_PINS, candidates.length || 2)),
       candidates,
     }),
-    [candidates, intake],
+    [candidates, intake, sample],
   )
 
   // ツリー・シートから消えた／空欄になったカードのピンは外れた扱い
@@ -256,12 +208,8 @@ export default function App() {
   }, [report, reportMeasureList, intake])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reportView))
-    } catch {
-      // ignore
-    }
-  }, [reportView])
+    writeJson(caseStorageKey(caseId, 'report'), reportView)
+  }, [caseId, reportView])
 
   function handleToggleFeatured(measureKey: string) {
     const keys = reportView.cards.map((c) => c.measureKey)
@@ -363,15 +311,46 @@ export default function App() {
     if (
       hasWork &&
       !window.confirm(
-        'すべての切り口を例（顧客数×単価 ／ 店舗数×店舗あたり売上）で置き換えますか？',
+        `すべての切り口を「${sample.label}」の例ツリーで置き換えますか？（施策・ピンも例に合わせます）`,
       )
     ) {
       return
     }
-    setWorkspace(exampleWorkspace(metric))
-    setPins([])
-    setMotives({})
+    const ex = sample.buildExample()
+    const { pins: sp, motives: sm } = applySampleSuspects(sample, ex)
+    setWorkspace(ex)
+    setPins(sp)
+    setMotives(sm)
+    setWarrant(createWarrantState())
+    setReport(createReportState())
+    setScore(null)
     setMode('decompose')
+  }
+
+  function handleSelectCase(nextId: string) {
+    if (nextId === caseId) {
+      setPhase('INTAKE')
+      return
+    }
+    const next = getCase(nextId)
+    const m = next.intake.target.metric
+    setCaseId(nextId)
+    saveActiveCaseId(nextId)
+    setWorkspace(loadCaseWorkspace(nextId, m))
+    const sus = loadCaseSuspects(nextId)
+    setPins(sus.pins)
+    setMotives(sus.motives)
+    setWarrant(loadCaseWarrant(nextId))
+    setReport(loadCaseReport(nextId))
+    setScore(null)
+    setScoreError(null)
+    setChallenge(null)
+    setCaptainState('idle')
+    setSubmittedOnce(false)
+    setReviseBonus(0)
+    setLastScored(0)
+    setMode('decompose')
+    setPhase('INTAKE')
   }
 
   const phaseInfo = PHASES.find((p) => p.id === phase)
@@ -385,6 +364,14 @@ export default function App() {
           <p className="app__case">
             {phaseInfo?.jp} · {caseData.title}
           </p>
+          <button
+            type="button"
+            className="app__case-switch"
+            onClick={() => setPhase('INTAKE')}
+            title="事件ファイルを切り替える"
+          >
+            事件切替（{sample.label}）
+          </button>
         </div>
         <ScoreBoard
           score={displayScore}
@@ -399,16 +386,50 @@ export default function App() {
       <IntakeMemos intake={intake} />
 
       {phase === 'INTAKE' && (
-        <StubPhase
-          title="事件受理（前提確認）"
-          lines={[
-            '今回は仮置き：上の3枚（定義・依頼人・TARGET）は固定値です。',
-            '予定：依頼人の調書（相談文）の曖昧な言葉をマーカーでなぞり、定義カードを書く。',
-            '予定：依頼人カードで「誰からの相談か」を選ぶ。',
-            '予定：目標を「指標・倍率・期限」のダイヤルで入力する（例：売上 ×1.2／3年）。',
-            'ここで決めた指標が、EVIDENCE のすべての切り口のツリーの一番上（黒カード）になります。',
-          ]}
-        />
+        <div className="intake-home">
+          <CasePicker activeId={caseId} onSelect={handleSelectCase} />
+          <section className="board intake-brief" aria-label="選択中の事件">
+            <div className="board__header">
+              <h2>{sample.label} — 事件概要</h2>
+              <span className="board__hint">捜査中のファイル</span>
+            </div>
+            <p className="intake-brief__text">{sample.briefing}</p>
+            {intake.statement && (
+              <blockquote className="intake-brief__statement">
+                <span className="intake-brief__quote-label">依頼人の調書</span>
+                <p>{intake.statement}</p>
+              </blockquote>
+            )}
+            <p className="evidence__help">
+              上の黄色メモ（定義・依頼人・TARGET）はこの事件の仮置き前提です。EVIDENCE で
+              「例を読み込む」と、この事件用の構造化ツリーが入ります。
+            </p>
+            <div className="intake-brief__actions">
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => setPhase('EVIDENCE')}
+              >
+                捜査を始める（EVIDENCE） ›
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  const ex = sample.buildExample()
+                  const { pins: sp, motives: sm } = applySampleSuspects(sample, ex)
+                  setWorkspace(ex)
+                  setPins(sp)
+                  setMotives(sm)
+                  setMode('decompose')
+                  setPhase('EVIDENCE')
+                }}
+              >
+                例ツリーを載せて捜査開始
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {phase === 'EVIDENCE' && (
@@ -523,7 +544,7 @@ export default function App() {
       <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} />
 
       <footer className="app__footer">
-        ケース面接モック · EVIDENCE〜RESULT が動作 · ⅰ は仮置き
+        ケース面接モック · サンプル事件3件 · INTAKE〜RESULT
       </footer>
     </div>
   )
