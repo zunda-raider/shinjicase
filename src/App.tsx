@@ -14,6 +14,7 @@ import type { ArchiveTab } from './components/ArchiveViewer'
 import { ModelMode } from './components/ModelMode'
 import { PHASE_TITLES } from './data/phases'
 import { isFactLabel } from './logic/modelView'
+import { factCardFromLine } from './data/models/factCards'
 import { ModeCycle } from './components/ModeCycle'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
@@ -475,8 +476,12 @@ export default function App() {
             onTogglePin={(nodeId) => handleTogglePinKey(pinKey(sheet.id, nodeId))}
             onReset={handleResetSheet}
             onLoadExample={handleLoadExample}
-            notes={(intake.extras ?? []).filter((x) => x.value.trim() && isFactLabel(x.label)).map((x) => `${x.label}：${x.value}`)}
-            genjo={[...new Set(reportView.cards.map((c) => c.current.trim()).filter(Boolean))]}
+            factCards={[
+              ...(intake.extras ?? [])
+                .filter((x) => x.value.trim() && isFactLabel(x.label))
+                .map((x) => factCardFromLine(`${x.label}：${x.value}`)),
+              ...[...new Set(reportView.cards.flatMap((c) => c.current.split(/\n|／/)).map((t) => t.trim()).filter(Boolean))].map(factCardFromLine),
+            ]}
             motives={Object.fromEntries(
               activePins
                 .map((k) => parsePinKey(k))

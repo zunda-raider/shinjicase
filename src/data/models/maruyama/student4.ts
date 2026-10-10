@@ -65,6 +65,11 @@ export const STUDENT4: ModelStudent = {
       node: { sheet: 'main', label: '来店客数' },
     },
   ],
+  factCards: [
+    { category: '顧客', text: '近隣の中高年中心、若年・ファミリー減' },
+    { category: '競合', text: '競合：モール・専門店・EC・SPA' },
+    { category: '顧客', text: '休日は来るが、平日は目的のある客のみ', qa: '質疑1' },
+  ],
   notes: [
     {
       label: '順番',

@@ -63,5 +63,13 @@ export const STUDENT6: ModelStudent = {
       node: { sheet: 'main', label: '客単価' },
     },
   ],
+  factCards: [
+    { category: '数字', text: '構成：衣料品35／食品30／化粧品15／他20' },
+    { category: '顧客', text: '中高年中心、若年・ファミリー減' },
+    { category: '課題', text: '百貨店に行く明確な理由がない' },
+    { category: '課題', text: '衣料品は正面から伸ばしにくい' },
+    { category: '強み弱み', text: '食品は頻度高く、駅前の行き帰りと好相性' },
+    { category: '強み弱み', text: '食品は低単価・低粗利、入口に使う', qa: '質疑1' },
+  ],
   notes: [],
 }

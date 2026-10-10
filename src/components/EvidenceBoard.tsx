@@ -21,8 +21,8 @@ import {
 import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { NodeLabel } from './NodeLabel'
-import { QaText } from './QaText'
-import { placeBoardNotes } from '../logic/boardNotes'
+import { placeFactCards } from '../logic/boardNotes'
+import { FACT_CATEGORIES, type FactCard } from '../data/models/factCards'
 
 export type BoardMode = 'decompose' | 'suspect'
 
@@ -49,10 +49,8 @@ interface Props {
   onMotiveChange?: (id: EvidenceNodeId, value: string) => void
   /** ツールバー右端（提出ボタンなど） */
   toolbarExtra?: ReactNode
-  /** ボードに置く事実メモ（読み取り専用） */
-  notes?: string[]
-  /** ボードに置く現状カード（読み取り専用） */
-  genjo?: string[]
+  /** ツリーの下に並べる事実・現状カード（読み取り専用） */
+  factCards?: FactCard[]
 }
 
 export function EvidenceBoard({
@@ -71,21 +69,13 @@ export function EvidenceBoard({
   motives,
   onMotiveChange,
   toolbarExtra,
-  notes,
-  genjo,
+  factCards,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
 
   const layout = useMemo(() => layoutTree(tree), [tree])
-  const placement = placeBoardNotes(
-    layout,
-    [
-      { key: 'fact', kind: 'fact', lines: notes ?? [] },
-      { key: 'genjo', kind: 'genjo', lines: genjo ?? [] },
-    ],
-    motives ? 26 : 0,
-  )
+  const placement = placeFactCards(layout, factCards ?? [], motives ? 26 : 0)
   const numbers = useMemo(() => numberTree(tree), [tree])
   const nodes = Object.values(tree.nodes)
   const isDecompose = !readOnly && mode === 'decompose'
@@ -203,26 +193,21 @@ export function EvidenceBoard({
             if (e.target === e.currentTarget) setSelectedId(null)
           }}
         >
-          {placement.notes.map((n) => (
+          {placement.cards.map((c) => (
             <div
-              key={n.key}
-              className={`board-note board-note--${n.kind}`}
-              style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
-              data-note={n.kind}
+              key={c.key}
+              className={`fact-card fact-card--${FACT_CATEGORIES.indexOf(c.category)}`}
+              style={{ left: c.x, top: c.y, width: c.w, height: c.h }}
+              data-category={c.category}
+              title={c.category}
             >
-              <span className="board-note__title">{n.kind === 'fact' ? '事実' : '現状'}</span>
-              <ul>
-                {n.lines.map((t, i) => (
-                  <li key={i}>
-                    <QaText text={t} />
-                  </li>
-                ))}
-              </ul>
+              <span className="fact-card__text">{c.text}</span>
+              {c.qa && <span className="qa-chip">{c.qa}</span>}
             </div>
           ))}
         <div
           className="evidence__canvas"
-          style={{ position: 'absolute', left: placement.treeX, top: 0, margin: 0, width: layout.width, height: layout.height + (motives ? 26 : 0) }}
+          style={{ position: 'absolute', left: (placement.width - layout.width) / 2, top: 0, margin: 0, width: layout.width, height: layout.height + (motives ? 26 : 0) }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedId(null)
           }}

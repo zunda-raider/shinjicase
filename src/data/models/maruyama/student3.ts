@@ -75,5 +75,10 @@ export const STUDENT3: ModelStudent = {
       ghostNode: { sheet: 'main', label: '客単価' },
     },
   ],
+  factCards: [
+    { category: '強み弱み', text: '強み：駅前立地・常連客・上位顧客・信頼' },
+    { category: '強み弱み', text: '弱み：若い世代・ネット対応・売場の使い方' },
+    { category: '課題', text: '主因は客数減。常連は高齢化で自然減', qa: '質疑2・3' },
+  ],
   notes: [],
 }

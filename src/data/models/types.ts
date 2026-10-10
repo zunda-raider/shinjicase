@@ -1,4 +1,5 @@
 import type { BusinessScale, LinkKind } from '../../types'
+import type { FactCard } from './factCards'
 
 /**
  * 模範解答（優秀な生徒の回答）の構造化データ。
@@ -56,6 +57,8 @@ export interface ModelStudent {
   focus: string
   pins: ModelRef[]
   measures: ModelMeasure[]
+  /** 事実・現状の短いカード（原文の言い回しを縮めたもの） */
+  factCards: FactCard[]
   /** 試算・伸ばせる根拠・順番など */
   notes: { label: string; text: string }[]
 }

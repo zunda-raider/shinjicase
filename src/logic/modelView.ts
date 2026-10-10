@@ -1,4 +1,5 @@
 import { DEFAULT_METRIC } from '../data/intake'
+import type { FactCard } from '../data/models/factCards'
 import type { ModelMode, ModelNode, ModelRef, ModelStudent } from '../data/models/types'
 import type { EvidenceTree, EvidenceWorkspace, IntakeData } from '../types'
 import { createTree, decompose, numberTree } from './evidenceTree'
@@ -55,8 +56,10 @@ export interface ModelView {
   /** measureKey → 見込み */
   estimates: Record<string, string>
   current: string[]
-  /** 事実（売上構成・数字など）：EVIDENCE ボードの注記 */
+  /** 事実（売上構成・数字など） */
   facts: string[]
+  /** EVIDENCE ボードの事実・現状カード */
+  factCards: FactCard[]
   focus: string
   notes: { label: string; text: string }[]
   pitches: ModelPitch[]
@@ -189,6 +192,7 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     estimates,
     current,
     facts,
+    factCards: student.factCards.filter((c) => mode === 'GOD' || !c.qa),
     focus: modeText(student.focus, mode),
     notes,
     pitches,

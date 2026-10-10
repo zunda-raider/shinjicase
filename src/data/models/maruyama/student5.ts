@@ -65,5 +65,13 @@ export const STUDENT5: ModelStudent = {
       ghostNode: { sheet: 'main', label: '客数' },
     },
   ],
+  factCards: [
+    { category: '数字', text: '売上：ピーク250億円→150億円' },
+    { category: '数字', text: '構成：衣料品35／食品30／化粧品15／他20' },
+    { category: '市場・人口', text: '周辺の商業集積が弱まりつつある' },
+    { category: '顧客', text: '中高年中心、若年・ファミリー減' },
+    { category: '課題', text: '主因は衣料品目的の来店減' },
+    { category: '強み弱み', text: '食品・化粧品に百貨店の強みが残る' },
+  ],
   notes: [{ label: '試算', text: '3つのセグメントの積み上げで＋30億円。うち法人で15億円程度を狙う〔質疑2〕。' }],
 }

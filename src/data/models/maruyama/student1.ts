@@ -77,6 +77,12 @@ export const STUDENT1: ModelStudent = {
       node: { sheet: 'main', label: '来店客数' },
     },
   ],
+  factCards: [
+    { category: '市場・人口', text: '人口減で来店客数は伸ばしにくい' },
+    { category: '競合', text: '品揃え・価格でスーパー・ECに勝てない' },
+    { category: '課題', text: '本質課題は体験価値の低下', qa: '質疑4' },
+    { category: '顧客', text: '若年層との接点が弱い' },
+  ],
   notes: [
     {
       label: '伸ばせる根拠',

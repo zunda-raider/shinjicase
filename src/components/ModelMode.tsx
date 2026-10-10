@@ -154,8 +154,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
             onLoadExample={() => {}}
             readOnly
             nodeBadges={nodeBadges}
-            notes={view.facts}
-            genjo={view.current.filter((c) => !view.facts.some((f) => f === c))}
+            factCards={view.factCards}
             tabs={
               <SheetTabs
                 sheets={view.ws.sheets}

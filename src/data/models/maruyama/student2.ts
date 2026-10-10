@@ -80,6 +80,14 @@ export const STUDENT2: ModelStudent = {
       node: { sheet: 'gaisho', label: '外商 37.5億円（売上の25%）' },
     },
   ],
+  factCards: [
+    { category: '数字', text: '売上150億円／来店客数400万人／客単価3,750円' },
+    { category: '収支', text: '収支：固定費重く、ほぼ均衡〜やや赤字' },
+    { category: '競合', text: '競合：モール・専門店・EC・SPA' },
+    { category: '市場・人口', text: '人口減' },
+    { category: '課題', text: '客単価が一般の小売店並み' },
+    { category: '課題', text: '客数策はモール・SPA・ECと正面衝突' },
+  ],
   notes: [
     {
       label: '試算',
