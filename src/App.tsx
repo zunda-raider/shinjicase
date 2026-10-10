@@ -379,9 +379,14 @@ export default function App() {
         key={model.caseId}
         caseId={model.caseId}
         caseLabel={getCase(model.caseId).label}
-        initialMode={model.tab}
+        mode={model.tab}
         initialPhase={model.phase}
-        onExit={() => setModel(null)}
+        onViewMode={(m, ph) => {
+          if (m === 'NORMAL') {
+            setModel(null)
+            setPhase(ph)
+          } else setModel({ caseId: model.caseId, tab: m, phase: ph })
+        }}
       />
     )
   }
@@ -412,7 +417,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} archiveAvailable={hasArchive(caseId)} onArchive={(tab) => setModel({ caseId, tab, phase })} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} archiveAvailable={hasArchive(caseId)} viewMode="NORMAL" onViewMode={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'REPORT' : phase })} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 

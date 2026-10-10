@@ -3387,3 +3387,10 @@
 .plan-card__note { display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 4px; background: #333; color: #ffd76a; }
 .evidence-card__qa { position: absolute; right: 4px; bottom: 4px; }
 .evidence.is-readonly .evidence-card { cursor: default; }
+.mode-toggle { display: inline-flex; margin-left: 10px; border: 1px solid #8a7a5a; border-radius: 8px; overflow: hidden; }
+.mode-toggle__seg { padding: 7px 14px; font-weight: 700; font-size: 13px; background: transparent; color: #e8dcc0; border: 0; border-right: 1px solid #8a7a5a; cursor: pointer; }
+.mode-toggle__seg:last-child { border-right: 0; }
+.mode-toggle__seg:disabled { opacity: 0.35; cursor: not-allowed; }
+.mode-toggle__seg--normal.is-active { background: #b3261e; color: #fff; }
+.mode-toggle__seg--ghost.is-active { background: rgba(190, 215, 250, 0.85); color: #1b2a44; }
+.mode-toggle__seg--god.is-active { background: linear-gradient(90deg, #c9a23a, #f2d27a); color: #3a2a00; }

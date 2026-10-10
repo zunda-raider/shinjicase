@@ -2,6 +2,8 @@ import { PHASES } from '../data/phases'
 import type { Phase } from '../types'
 import { PhaseSteps } from './PhaseSteps'
 
+export type ViewMode = 'NORMAL' | 'GHOST' | 'GOD'
+
 interface Props {
   active: Phase
   onSelect: (phase: Phase) => void
@@ -11,11 +13,12 @@ interface Props {
   submitDisabled?: boolean
   scoring?: boolean
   archiveAvailable?: boolean
-  onArchive?: (tab: 'GHOST' | 'GOD') => void
+  viewMode?: ViewMode
+  onViewMode?: (m: ViewMode) => void
   readOnly?: boolean
 }
 
-export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, onArchive, readOnly }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, viewMode = 'NORMAL', onViewMode, readOnly }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -41,26 +44,20 @@ export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, su
         ))}
       </div>
       <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} readOnly={readOnly} />
-      {onArchive && (
-        <span className="phase-nav__archive">
-          <button
-            type="button"
-            className="archive-badge archive-badge--ghost"
-            disabled={!archiveAvailable}
-            title="許容解"
-            onClick={() => onArchive('GHOST')}
-          >
-            ARCHIVE
-          </button>
-          <button
-            type="button"
-            className="archive-badge archive-badge--god"
-            disabled={!archiveAvailable}
-            title="完全解"
-            onClick={() => onArchive('GOD')}
-          >
-            GOD
-          </button>
+      {onViewMode && (
+        <span className="mode-toggle" role="group" aria-label="表示モード">
+          {(['NORMAL', 'GHOST', 'GOD'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={`mode-toggle__seg mode-toggle__seg--${m.toLowerCase()} ${viewMode === m ? 'is-active' : ''}`}
+              aria-pressed={viewMode === m}
+              disabled={m !== 'NORMAL' && !archiveAvailable}
+              onClick={() => viewMode !== m && onViewMode(m)}
+            >
+              {m === 'NORMAL' ? '通常' : m}
+            </button>
+          ))}
         </span>
       )}
     </nav>

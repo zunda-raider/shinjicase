@@ -9,7 +9,7 @@ import { ArchiveViewer } from './ArchiveViewer'
 import { EvidenceBoard } from './EvidenceBoard'
 import { IntakeMemos } from './IntakeMemos'
 import { OperationPhase } from './OperationPhase'
-import { PhaseNav } from './PhaseNav'
+import { PhaseNav, type ViewMode } from './PhaseNav'
 import { PhaseSteps } from './PhaseSteps'
 import { QaChip, QaText } from './QaText'
 import { SheetTabs } from './SheetTabs'
@@ -17,9 +17,9 @@ import { SheetTabs } from './SheetTabs'
 interface Props {
   caseId: string
   caseLabel: string
-  initialMode: Mode
+  mode: Mode
   initialPhase?: Phase
-  onExit: () => void
+  onViewMode: (m: ViewMode, phase: Phase) => void
 }
 
 const TITLES: Partial<Record<Phase, string>> = {
@@ -31,9 +31,8 @@ const TITLES: Partial<Record<Phase, string>> = {
 }
 
 /** GHOST MODE / GOD MODE：優秀な生徒の回答をいつもの画面で閲覧（編集不可・保存なし） */
-export function ModelMode({ caseId, caseLabel, initialMode, initialPhase, onExit }: Props) {
+export function ModelMode({ caseId, caseLabel, mode, initialPhase, onViewMode }: Props) {
   const students = getModelStudents(caseId)
-  const [mode, setMode] = useState<Mode>(initialMode)
   const [idx, setIdx] = useState(0)
   const [phase, setPhase] = useState<Phase>(
     initialPhase && initialPhase !== 'RESULT' ? initialPhase : 'INTAKE',
@@ -96,16 +95,6 @@ export function ModelMode({ caseId, caseLabel, initialMode, initialPhase, onExit
             </button>
           ))}
         </span>
-        <button
-          type="button"
-          className={`archive-badge archive-badge--${mode === 'GHOST' ? 'god' : 'ghost'}`}
-          onClick={() => {
-            setMode(mode === 'GHOST' ? 'GOD' : 'GHOST')
-            setSheetId('s1')
-          }}
-        >
-          {mode === 'GHOST' ? 'GOD へ' : 'GHOST へ'}
-        </button>
         {mode === 'GHOST' && (
           <span className="model-banner__reach" data-testid="reach">
             到達度 <b>{reach.grade}</b> {reach.axis}
@@ -115,9 +104,6 @@ export function ModelMode({ caseId, caseLabel, initialMode, initialPhase, onExit
         <button type="button" className="btn btn--ghost model-banner__rubric" onClick={() => setRubric(true)}>
           合格ライン
         </button>
-        <button type="button" className="btn btn--primary model-banner__exit" onClick={onExit}>
-          モードを抜ける
-        </button>
       </div>
 
       <header className="app__header">
@@ -126,7 +112,7 @@ export function ModelMode({ caseId, caseLabel, initialMode, initialPhase, onExit
         </div>
       </header>
 
-      <PhaseNav active={phase} onSelect={go} readOnly />
+      <PhaseNav active={phase} onSelect={go} readOnly archiveAvailable viewMode={mode} onViewMode={(m) => onViewMode(m, phase)} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={view.intake} />}
 
