@@ -12,13 +12,10 @@ interface Props {
   onSubmit?: () => void
   submitDisabled?: boolean
   scoring?: boolean
-  archiveAvailable?: boolean
-  viewMode?: ViewMode
-  onViewMode?: (m: ViewMode) => void
   readOnly?: boolean
 }
 
-export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, archiveAvailable, viewMode = 'NORMAL', onViewMode, readOnly }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring, readOnly }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -44,22 +41,6 @@ export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, su
         ))}
       </div>
       <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} readOnly={readOnly} />
-      {onViewMode && (
-        <span className="mode-toggle" role="group" aria-label="表示モード">
-          {(['NORMAL', 'GHOST', 'GOD'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`mode-toggle__seg mode-toggle__seg--${m.toLowerCase()} ${viewMode === m ? 'is-active' : ''}`}
-              aria-pressed={viewMode === m}
-              disabled={m !== 'NORMAL' && !archiveAvailable}
-              onClick={() => viewMode !== m && onViewMode(m)}
-            >
-              {m === 'NORMAL' ? '通常' : m}
-            </button>
-          ))}
-        </span>
-      )}
     </nav>
   )
 }

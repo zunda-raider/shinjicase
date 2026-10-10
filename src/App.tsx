@@ -12,6 +12,8 @@ import { IntakeSetup } from './components/IntakeSetup'
 import { TitleScreen } from './components/TitleScreen'
 import type { ArchiveTab } from './components/ArchiveViewer'
 import { ModelMode } from './components/ModelMode'
+import { PHASE_TITLES } from './data/phases'
+import { ModeCycle } from './components/ModeCycle'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
 import { SuspectList } from './components/SuspectList'
@@ -94,14 +96,6 @@ import type {
 import './App.css'
 
 
-const PHASE_TITLES: Record<Phase, string> = {
-  INTAKE: '事件受理 — INTAKE',
-  EVIDENCE: '捜査ボード — EVIDENCE',
-  OPERATION: '逮捕作戦 — OPERATION',
-  WARRANT: '令状請求 — WARRANT',
-  REPORT: '最終報告 — REPORT',
-  RESULT: '採点掲示 — RESULT',
-}
 
 
 export default function App() {
@@ -378,7 +372,6 @@ export default function App() {
       <ModelMode
         key={model.caseId}
         caseId={model.caseId}
-        caseLabel={getCase(model.caseId).label}
         mode={model.tab}
         initialPhase={model.phase}
         onViewMode={(m, ph) => {
@@ -408,6 +401,11 @@ export default function App() {
       <header className="app__header">
         <div className="app__brand">
           <h1 className="app__title">{PHASE_TITLES[phase]}</h1>
+          <ModeCycle
+            mode="NORMAL"
+            available={hasArchive(caseId)}
+            onChange={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'REPORT' : phase })}
+          />
         </div>
         <ScoreBoard
           score={displayScore}
@@ -417,7 +415,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} archiveAvailable={hasArchive(caseId)} viewMode="NORMAL" onViewMode={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'REPORT' : phase })} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 

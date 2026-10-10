@@ -5,10 +5,11 @@ import { pinKey, parsePinKey } from '../logic/workspace'
 import { buildModelView } from '../logic/modelView'
 import { MAX_PINS } from '../logic/evidenceTree'
 import type { Phase } from '../types'
-import { ArchiveViewer } from './ArchiveViewer'
+import { PHASE_TITLES } from '../data/phases'
 import { EvidenceBoard } from './EvidenceBoard'
 import { IntakeMemos } from './IntakeMemos'
 import { OperationPhase } from './OperationPhase'
+import { ModeCycle } from './ModeCycle'
 import { PhaseNav, type ViewMode } from './PhaseNav'
 import { PhaseSteps } from './PhaseSteps'
 import { QaChip, QaText } from './QaText'
@@ -16,22 +17,14 @@ import { SheetTabs } from './SheetTabs'
 
 interface Props {
   caseId: string
-  caseLabel: string
   mode: Mode
   initialPhase?: Phase
   onViewMode: (m: ViewMode, phase: Phase) => void
 }
 
-const TITLES: Partial<Record<Phase, string>> = {
-  INTAKE: 'INTAKE',
-  EVIDENCE: 'EVIDENCE',
-  OPERATION: 'OPERATION',
-  WARRANT: 'WARRANT',
-  REPORT: 'REPORT',
-}
 
 /** GHOST MODE / GOD MODE：優秀な生徒の回答をいつもの画面で閲覧（編集不可・保存なし） */
-export function ModelMode({ caseId, caseLabel, mode, initialPhase, onViewMode }: Props) {
+export function ModelMode({ caseId, mode, initialPhase, onViewMode }: Props) {
   const students = getModelStudents(caseId)
   const [idx, setIdx] = useState(0)
   const [phase, setPhase] = useState<Phase>(
@@ -39,7 +32,7 @@ export function ModelMode({ caseId, caseLabel, mode, initialPhase, onViewMode }:
   )
   const [sheetId, setSheetId] = useState('s1')
   const [pitchIdx, setPitchIdx] = useState(0)
-  const [rubric, setRubric] = useState(false)
+  const [pickOpen, setPickOpen] = useState(false)
 
   const view = useMemo(() => {
     const st = getModelStudents(caseId)[idx]
@@ -65,54 +58,54 @@ export function ModelMode({ caseId, caseLabel, mode, initialPhase, onViewMode }:
     if (q) nodeBadges[id] = q
   }
   const pitch = view.pitches[Math.min(pitchIdx, view.pitches.length - 1)]
-  const reach = view.student.reach
   const go = (p: Phase) => setPhase(p === 'RESULT' ? 'REPORT' : p)
 
   return (
     <div className={`app model-mode model-mode--${mode.toLowerCase()}`} data-testid="model-mode">
-      <div className="model-banner" role="region" aria-label="閲覧モード">
-        <strong className="model-banner__title">
-          {mode} MODE — 生徒 {view.student.no}
-        </strong>
-        <span className="model-banner__case">
-          {caseLabel}：{view.student.title}
-        </span>
-        <span className="model-banner__students" role="tablist" aria-label="生徒">
-          {students.map((s, i) => (
-            <button
-              key={s.no}
-              type="button"
-              role="tab"
-              aria-selected={i === idx}
-              className={i === idx ? 'is-active' : ''}
-              onClick={() => {
-                setIdx(i)
-                setSheetId('s1')
-                setPitchIdx(0)
-              }}
-            >
-              {s.no}
-            </button>
-          ))}
-        </span>
-        {mode === 'GHOST' && (
-          <span className="model-banner__reach" data-testid="reach">
-            到達度 <b>{reach.grade}</b> {reach.axis}
-            {reach.missing !== '—' && <> ／ 足りない点：{reach.missing}</>}
-          </span>
-        )}
-        <button type="button" className="btn btn--ghost model-banner__rubric" onClick={() => setRubric(true)}>
-          合格ライン
-        </button>
-      </div>
-
       <header className="app__header">
         <div className="app__brand">
-          <h1 className="app__title">{TITLES[phase]}</h1>
+          <h1 className="app__title">{PHASE_TITLES[phase]}</h1>
+          <ModeCycle mode={mode} available onChange={(m) => onViewMode(m, phase)} />
+          <span className="model-students">
+            <button
+              type="button"
+              className="model-students__toggle"
+              aria-expanded={pickOpen}
+              onClick={() => setPickOpen((o) => !o)}
+            >
+              生徒 {view.student.no} ▾
+            </button>
+            {pickOpen && (
+              <span className="model-students__pop" role="listbox" aria-label="生徒">
+                {students.map((s, i) => (
+                  <button
+                    key={s.no}
+                    type="button"
+                    role="option"
+                    aria-selected={i === idx}
+                    className={i === idx ? 'is-active' : ''}
+                    onClick={() => {
+                      setIdx(i)
+                      setSheetId('s1')
+                      setPitchIdx(0)
+                      setPickOpen(false)
+                    }}
+                  >
+                    {s.no}
+                  </button>
+                ))}
+              </span>
+            )}
+          </span>
+
         </div>
       </header>
 
-      <PhaseNav active={phase} onSelect={go} readOnly archiveAvailable viewMode={mode} onViewMode={(m) => onViewMode(m, phase)} />
+      <PhaseNav
+        active={phase}
+        onSelect={go}
+        readOnly
+      />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={view.intake} />}
 
@@ -283,9 +276,6 @@ export function ModelMode({ caseId, caseLabel, mode, initialPhase, onViewMode }:
 
       <PhaseSteps active={phase} onSelect={go} readOnly />
 
-      {rubric && (
-        <ArchiveViewer caseId={caseId} caseLabel={caseLabel} initialTab="GHOST" onClose={() => setRubric(false)} />
-      )}
     </div>
   )
 }

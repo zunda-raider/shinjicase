@@ -12,3 +12,12 @@ export const PHASES: { id: Phase; label: string; jp: string; stub?: boolean }[] 
   { id: 'REPORT', label: 'REPORT', jp: 'ⅵ 最終報告（まとめ・提出）' },
   { id: 'RESULT', label: 'RESULT', jp: '採点結果（西部劇掲示）' },
 ]
+
+export const PHASE_TITLES: Record<Phase, string> = {
+  INTAKE: '事件受理 — INTAKE',
+  EVIDENCE: '捜査ボード — EVIDENCE',
+  OPERATION: '逮捕作戦 — OPERATION',
+  WARRANT: '令状請求 — WARRANT',
+  REPORT: '最終報告 — REPORT',
+  RESULT: '採点掲示 — RESULT',
+}
