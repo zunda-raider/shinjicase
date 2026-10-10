@@ -7,7 +7,7 @@ import {
   numberTree,
   subtreeIds,
 } from '../logic/evidenceTree'
-import { circled, pinMeasureStatus } from '../logic/operation'
+import { circled } from '../logic/operation'
 import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
@@ -93,6 +93,8 @@ export function OperationPhase({
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [hoverId, setHoverId] = useState<EvidenceNodeId | null>(null)
   const [onlySuspects, setOnlySuspects] = useState(false)
+  /** 施策がなくても表示するノード（ツリーでクリックしたもの） */
+  const [revealed, setRevealed] = useState<EvidenceNodeId[]>([])
   const [focusMeasureId, setFocusMeasureId] = useState<string | null>(null)
 
   const cardRefs = useRef<Record<string, HTMLElement | null>>({})
@@ -108,11 +110,11 @@ export function OperationPhase({
     return out
   }, [pins, sheet.id])
 
-  const status = useMemo(() => pinMeasureStatus(ws, pins), [ws, pins])
-  const missing = status.filter((s) => s.measureCount === 0)
 
   const cardIds = useMemo(() => {
-    const ids = order.filter((id) => id !== tree.rootId)
+    const ids = order.filter(
+      (id) => id !== tree.rootId && ((sheet.measures[id]?.length ?? 0) > 0 || (!readOnly && revealed.includes(id))),
+    )
     const filtered = onlySuspects ? ids.filter((id) => pinNumbers[id] !== undefined) : ids
     return [...filtered].sort((a, b) => {
       const pa = pinNumbers[a] ?? Infinity
@@ -120,7 +122,7 @@ export function OperationPhase({
       if (pa !== pb) return pa - pb
       return order.indexOf(a) - order.indexOf(b)
     })
-  }, [order, tree.rootId, onlySuspects, pinNumbers])
+  }, [order, tree.rootId, onlySuspects, pinNumbers, sheet.measures, revealed, readOnly])
 
   const pinCountBySheet = useMemo(() => {
     const out: Record<string, number> = {}
@@ -136,6 +138,7 @@ export function OperationPhase({
   function selectFromTree(id: EvidenceNodeId) {
     if (id === tree.rootId) return
     setSelectedId(id)
+    if (!revealed.includes(id)) setRevealed((r) => [...r, id])
     if (onlySuspects && pinNumbers[id] === undefined) setOnlySuspects(false)
     requestAnimationFrame(() =>
       cardRefs.current[id]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
@@ -242,7 +245,7 @@ export function OperationPhase({
                   <span className="evidence-card__label">{n.label.trim() || '（未記入）'}</span>
                   {!isRoot && (
                     <span className={`operation-node__count ${count ? 'has' : ''}`}>
-                      作戦 {count}
+                      {pinNo !== undefined && count === 0 && !readOnly ? '⚠ ' : ''}作戦 {count}
                     </span>
                   )}
                 </div>
@@ -268,16 +271,6 @@ export function OperationPhase({
       </section>
 
       <section className="operation__plans" aria-label="作戦カード">
-        {!readOnly && missing.length > 0 && (
-          <ul className="operation__warnings" aria-label="作戦のない容疑者">
-            {missing.map((m) => (
-              <li key={m.key}>
-                ⚠ 容疑者{circled(m.pinNo)}（{m.number} {m.title}
-                {m.sheetId !== sheet.id ? ` ／ ${m.sheetName}` : ''}）に作戦がない
-              </li>
-            ))}
-          </ul>
-        )}
 
         <div className="operation__plans-header">
           <h2>作戦カード</h2>

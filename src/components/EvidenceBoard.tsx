@@ -41,6 +41,11 @@ interface Props {
   readOnly?: boolean
   /** ノードID → 質疑チップ */
   nodeBadges?: Record<EvidenceNodeId, string>
+  /** ピンの動機（ノードID → 文）。指定時はピンの下に入力欄 */
+  motives?: Record<EvidenceNodeId, string>
+  onMotiveChange?: (id: EvidenceNodeId, value: string) => void
+  /** ツールバー右端（提出ボタンなど） */
+  toolbarExtra?: ReactNode
 }
 
 export function EvidenceBoard({
@@ -56,6 +61,9 @@ export function EvidenceBoard({
   tabs,
   readOnly,
   nodeBadges,
+  motives,
+  onMotiveChange,
+  toolbarExtra,
 }: Props) {
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
@@ -165,6 +173,7 @@ export function EvidenceBoard({
             リセット
           </button>
         </div>
+        {toolbarExtra}
       </div>}
 
       {tabs}
@@ -323,6 +332,27 @@ export function EvidenceBoard({
               </div>
             )
           })}
+
+          {motives &&
+            nodes.map((n) => {
+              const p = layout.positions[n.id]
+              const no = pinNumbers[n.id]
+              if (!p || no === undefined) return null
+              return (
+                <input
+                  key={`motive-${n.id}`}
+                  type="text"
+                  className="evidence-card__motive"
+                  style={{ left: p.x, top: p.y + CARD_H + 3, width: CARD_W }}
+                  value={motives[n.id] ?? ''}
+                  readOnly={readOnly}
+                  onChange={(e) => onMotiveChange?.(n.id, e.target.value)}
+                  placeholder="動機…"
+                  aria-label={`${n.label} の動機`}
+                  maxLength={120}
+                />
+              )
+            })}
 
           {layout.operators.map((op) => {
             const parent = tree.nodes[op.parentId]

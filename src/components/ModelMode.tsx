@@ -3,7 +3,6 @@ import { getModelStudents } from '../data/models'
 import type { ModelMode as Mode } from '../data/models/types'
 import { pinKey, parsePinKey } from '../logic/workspace'
 import { buildModelView } from '../logic/modelView'
-import { MAX_PINS } from '../logic/evidenceTree'
 import type { Phase } from '../types'
 import { PHASE_TITLES } from '../data/phases'
 import { EvidenceBoard } from './EvidenceBoard'
@@ -11,7 +10,7 @@ import { OperationPhase } from './OperationPhase'
 import { ModeCycle } from './ModeCycle'
 import { PhaseNav, type ViewMode } from './PhaseNav'
 import { PhaseSteps } from './PhaseSteps'
-import { QaChip, QaText } from './QaText'
+import { QaText } from './QaText'
 import { SheetTabs } from './SheetTabs'
 
 interface Props {
@@ -135,7 +134,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
       )}
 
       {phase === 'EVIDENCE' && (
-        <div className="app__layout">
+        <div className="app__layout app__layout--full">
           <EvidenceBoard
             key={`${idx}-${mode}-${sheet.id}`}
             tree={sheet.tree}
@@ -163,39 +162,6 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
               />
             }
           />
-          <div className="app__side">
-            <section className="suspect-list" aria-label="容疑者リスト">
-              <header className="suspect-list__header">
-                <span className="suspect-list__title">PRIME SUSPECTS</span>
-                <span className="suspect-list__count">
-                  {view.pins.length}/{MAX_PINS}
-                </span>
-              </header>
-              <p className="model-focus">
-                <b>狙う箱</b> {view.focus}
-              </p>
-              {view.pins.length === 0 ? (
-                <p className="suspect-list__empty">容疑者なし</p>
-              ) : (
-                <ol className="suspect-list__items">
-                  {view.pins.map((k, i) => {
-                    const p = parsePinKey(k)
-                    const sh = view.ws.sheets.find((s) => s.id === p.sheetId)!
-                    return (
-                      <li key={k} className="suspect-list__item">
-                        <div className="suspect-list__row">
-                          <span className="suspect-list__no">{i + 1}</span>
-                          <span className="suspect-list__name">{sh.tree.nodes[p.nodeId].label}</span>
-                          <QaChip label={view.nodeQa[k]} />
-                        </div>
-                        <span className="suspect-list__path">{sh.name}</span>
-                      </li>
-                    )
-                  })}
-                </ol>
-              )}
-            </section>
-          </div>
         </div>
       )}
 

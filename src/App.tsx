@@ -16,7 +16,6 @@ import { PHASE_TITLES } from './data/phases'
 import { ModeCycle } from './components/ModeCycle'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
-import { SuspectList } from './components/SuspectList'
 import { ReportPhase } from './components/ReportPhase'
 import { ResultPhase } from './components/ResultPhase'
 import { WarrantPhase } from './components/WarrantPhase'
@@ -176,13 +175,6 @@ export default function App() {
   const activePins = useMemo(
     () => pins.filter((id) => candidates.some((c) => c.id === id)),
     [pins, candidates],
-  )
-  const suspects = useMemo(
-    () =>
-      activePins
-        .map((id) => candidates.find((c) => c.id === id))
-        .filter((c): c is NonNullable<typeof c> => !!c),
-    [activePins, candidates],
   )
   const selections = useMemo(
     () => activePins.map((id) => ({ candidateId: id, motive: motives[id] ?? '' })),
@@ -470,7 +462,7 @@ export default function App() {
       )}
 
       {phase === 'EVIDENCE' && (
-        <div className="app__layout">
+        <div className={`app__layout ${captainState === 'idle' ? 'app__layout--full' : ''}`}>
           <EvidenceBoard
             key={sheet.id}
             tree={tree}
@@ -482,6 +474,27 @@ export default function App() {
             onTogglePin={(nodeId) => handleTogglePinKey(pinKey(sheet.id, nodeId))}
             onReset={handleResetSheet}
             onLoadExample={handleLoadExample}
+            motives={Object.fromEntries(
+              activePins
+                .map((k) => parsePinKey(k))
+                .filter((p) => p.sheetId === sheet.id)
+                .map((p) => [p.nodeId, motives[pinKey(p.sheetId, p.nodeId)] ?? '']),
+            )}
+            onMotiveChange={(nodeId, v) => setMotive(pinKey(sheet.id, nodeId), v)}
+            toolbarExtra={
+              <span className="evidence__submit">
+                {reviseBonus > 0 && <span className="board__revise-won">REVISE BONUS +{reviseBonus}</span>}
+                <button
+                  type="button"
+                  className="btn btn--primary evidence__small"
+                  disabled={activePins.length === 0}
+                  onClick={handleSubmit}
+                  title={submittedOnce && reviseBonus === 0 && captainState !== 'idle' ? `修正して再提出すると REVISE BONUS (+${REVISE_BONUS})` : undefined}
+                >
+                  {submittedOnce ? '再提出 → CAPTAIN' : 'CAPTAIN に提出'}
+                </button>
+              </span>
+            }
             tabs={
               <SheetTabs
                 sheets={ws.sheets}
@@ -495,23 +508,8 @@ export default function App() {
             }
           />
 
+          {captainState !== 'idle' && (
           <div className="app__side">
-            <SuspectList
-              suspects={suspects}
-              maxPins={MAX_PINS}
-              motives={motives}
-              onMotiveChange={setMotive}
-              onUnpin={handleTogglePinKey}
-              canSubmit={activePins.length > 0}
-              submitLabel={submittedOnce ? '再提出 → CAPTAIN' : 'CAPTAIN に提出'}
-              onSubmit={handleSubmit}
-              note={
-                submittedOnce && reviseBonus === 0 && captainState !== 'idle'
-                  ? `修正して再提出すると REVISE BONUS (+${REVISE_BONUS})`
-                  : undefined
-              }
-              bonusNote={reviseBonus > 0 ? `REVISE BONUS +${reviseBonus} 獲得` : undefined}
-            />
             <CaptainPanel
               state={captainState}
               lines={challenge?.lines ?? []}
@@ -519,6 +517,7 @@ export default function App() {
               onAcknowledge={() => setCaptainState('acknowledged')}
             />
           </div>
+          )}
         </div>
       )}
 

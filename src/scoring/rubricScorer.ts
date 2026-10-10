@@ -98,7 +98,8 @@ export function scoreInputFromModel(caseId: string, v: ModelView): ScoreInput {
     years: v.intake.target.years,
     ws: v.ws,
     pins: v.pins,
-    motives: {},
+    // 原文の「狙う箱」の一文を各ピンの動機として扱う
+    motives: Object.fromEntries(v.pins.map((k) => [k, v.focus])),
     warrant: null,
     pitches: v.pitches.map((p) => ({ ...p })),
     finalAnswer: '',
@@ -170,7 +171,7 @@ const REASONS: [string, RegExp][] = [
 
 /* ---------------- 採点本体 ---------------- */
 
-export function scoreByRubric(input: ScoreInput, opts: { closest?: boolean } = {}): ScoreResult {
+function rawCriteria(input: ScoreInput): CriterionScore[] {
   const ideal = getIdeal(input.caseId)
   const crit: CriterionScore[] = []
   const push = (id: CriterionId, score: number, feedback: string) =>
@@ -226,7 +227,7 @@ export function scoreByRubric(input: ScoreInput, opts: { closest?: boolean } = {
   const pins = input.pins
   const labels = pinLabels(input.ws, pins)
   const motives = pins.map((k) => input.motives[k] ?? '').filter((m) => m.trim().length >= 6)
-  const reasonText = [...motives, ...input.pitches.map((p) => p.current)].join(' ')
+  const reasonText = [...motives, ...input.pitches.map((p) => p.current), ptext].join(' ')
   const reasonHits = REASONS.filter(([, re]) => re.test(reasonText)).map(([n]) => n)
   const mtexts = measureTexts(input.ws)
   const pinLineage = lineageOf(labels.join(' '), ideal)
@@ -319,7 +320,43 @@ export function scoreByRubric(input: ScoreInput, opts: { closest?: boolean } = {
     push('evaluation', s, fb)
   }
 
-  const total = crit.reduce((a, c) => a + c.score, 0)
+  return crit
+}
+
+/*
+ * 模範（GOD）アンカー：模範解答がある事件では、6人の GOD 回答＝100点として
+ * 各項目を「GOD の最低値で満点」になるよう換算する。
+ * 評価（WARRANT）が無い入力（模範など）は評価を対象外にし、残りで100点換算。
+ */
+const anchorCache = new Map<string, Partial<Record<CriterionId, number>>>()
+
+function anchors(caseId: string): Partial<Record<CriterionId, number>> | null {
+  const students = getModelStudents(caseId)
+  if (!students.length) return null
+  const hit = anchorCache.get(caseId)
+  if (hit) return hit
+  const out: Partial<Record<CriterionId, number>> = {}
+  for (const st of students) {
+    for (const c of rawCriteria(scoreInputFromModel(caseId, buildModelView(st, 'GOD')))) {
+      out[c.id] = Math.min(out[c.id] ?? Infinity, c.score)
+    }
+  }
+  anchorCache.set(caseId, out)
+  return out
+}
+
+export function scoreByRubric(input: ScoreInput, opts: { closest?: boolean } = {}): ScoreResult {
+  const a = anchors(input.caseId)
+  const crit = rawCriteria(input)
+    .filter((c) => c.id !== 'evaluation' || input.warrant)
+    .map((c) => {
+      const anchor = a?.[c.id]
+      if (!anchor) return c
+      // 平方根カーブ：模範に近い回答の差を詰めすぎない
+      return { ...c, score: Math.round(Math.sqrt(Math.min(1, c.score / anchor)) * c.max) }
+    })
+  const max = crit.reduce((s, c) => s + c.max, 0) || 1
+  const total = Math.round((crit.reduce((s, c) => s + c.score, 0) / max) * 100)
   const result: ScoreResult = {
     source: 'rule',
     total,

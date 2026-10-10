@@ -14,7 +14,7 @@ import type {
 /* ------------------------------------------------------------------ */
 
 export const CARD_W = 156
-export const CARD_H = 72
+export const CARD_H = 56
 /** 兄弟カードの間（演算子を置く幅） */
 export const H_GAP = 48
 /** 段と段の間 */

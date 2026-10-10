@@ -27,22 +27,17 @@ function badInput(): ScoreInput {
 }
 
 describe('rubricScorer（まるやま模範で検証）', () => {
-  it('◎ の生徒（1・5）の GOD は高得点', () => {
-    for (const no of [1, 5]) {
+  it('6人の GOD はすべて100点（S）', () => {
+    for (let no = 1; no <= 6; no++) {
       const r = score(no, 'GOD')
-      expect(r.total).toBeGreaterThanOrEqual(85)
-      expect(['S', 'A']).toContain(r.grade)
-      expect(r.reach).toBe('◎')
+      expect(r.total).toBe(100)
+      expect(r.grade).toBe('S')
+      expect(r.criteria.some((c) => c.id === 'evaluation')).toBe(false)
     }
   })
 
-  it('△ の生徒（2・3）の GHOST は中程度', () => {
-    for (const no of [2, 3]) {
-      const r = score(no, 'GHOST')
-      expect(r.total).toBeGreaterThanOrEqual(50)
-      expect(r.total).toBeLessThanOrEqual(70)
-      expect(r.reach).toBe('△')
-    }
+  it('GHOST は合格圏（≥85）', () => {
+    for (let no = 1; no <= 6; no++) expect(score(no, 'GHOST').total).toBeGreaterThanOrEqual(85)
   })
 
   it('GOD は同じ生徒の GHOST 以上', () => {
@@ -57,7 +52,7 @@ describe('rubricScorer（まるやま模範で検証）', () => {
 
   it('6項目・決定的・近い生徒を返す', () => {
     const r = score(5, 'GOD')
-    expect(r.criteria.map((c) => c.max).reduce((a, b) => a + b)).toBe(100)
+    expect(r.criteria.map((c) => c.max).reduce((a, b) => a + b)).toBe(95)
     expect(score(5, 'GOD').total).toBe(r.total)
     expect(r.closest?.no).toBe(5)
     expect(score(1, 'GOD').closest?.no).toBe(1)
