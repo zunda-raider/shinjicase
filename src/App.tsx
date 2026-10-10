@@ -105,7 +105,6 @@ export default function App() {
   const sample = getCase(caseId)
   const [intake, setIntake] = useState<IntakeData>(() => loadCaseIntake(loadActiveCaseId()))
   const [onTitle, setOnTitle] = useState(true)
-  const [intakeStep, setIntakeStep] = useState<'briefing' | 'statement'>('briefing')
   const [phase, setPhase] = useState<Phase>('INTAKE')
   const metric = intakeMetric(intake)
   const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() =>
@@ -166,7 +165,7 @@ export default function App() {
     () => ({
       id: sample.id,
       title: `CASE FILE: ${intake.client.name} — 目標 ${formatTarget(intake.target)}`,
-      briefing: sample.briefing,
+      briefing: sample.odai,
       idealPrimeCount: Math.max(1, Math.min(MAX_PINS, candidates.length || 2)),
       candidates,
     }),
@@ -337,7 +336,6 @@ export default function App() {
 
   function handleOpenCase(nextId: string) {
     setOnTitle(false)
-    setIntakeStep('briefing')
     if (nextId === caseId) {
       setPhase('INTAKE')
       return
@@ -391,27 +389,11 @@ export default function App() {
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 
-      {phase === 'INTAKE' && intakeStep === 'briefing' && (
-        <section className="board intake-brief" aria-label="事件概要">
-          <div className="board__header">
-            <h2>{sample.label} — 事件概要</h2>
-          </div>
-          <p className="intake-brief__text">{sample.briefing}</p>
-          <div className="intake-brief__actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setOnTitle(true)}>
-              ‹ 事件ファイル一覧
-            </button>
-            <button type="button" className="btn btn--primary" onClick={() => setIntakeStep('statement')}>
-              依頼人の調書へ ›
-            </button>
-          </div>
-        </section>
-      )}
-
-      {phase === 'INTAKE' && intakeStep === 'statement' && (
+      {phase === 'INTAKE' && (
         <section className="board intake-brief" aria-label="依頼人の調書">
           <div className="board__header">
-            <h2>{sample.label} — 依頼人の調書</h2>
+            <h2>お題：{sample.odai}</h2>
+            <span className="board__hint">{sample.label}</span>
           </div>
           {intake.statement && (
             <blockquote className="intake-brief__statement">
@@ -420,8 +402,8 @@ export default function App() {
           )}
           <IntakeSetup intake={intake} onChange={setIntake} onFillExample={fillExampleIntake} />
           <div className="intake-brief__actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setIntakeStep('briefing')}>
-              ‹ 事件概要
+            <button type="button" className="btn btn--ghost" onClick={() => setOnTitle(true)}>
+              ‹ 事件ファイル一覧
             </button>
             <button type="button" className="btn btn--primary" onClick={() => setPhase('EVIDENCE')}>
               捜査を始める（EVIDENCE） ›
@@ -556,7 +538,7 @@ export default function App() {
       <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
       <footer className="app__footer">
-        ケース面接モック · サンプル事件3件 · INTAKE〜RESULT
+        ケース面接モック · サンプル事件6件 · INTAKE〜RESULT
       </footer>
     </div>
   )

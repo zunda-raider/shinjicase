@@ -9,10 +9,21 @@ import { ROOT_ID } from '../logic/evidenceTree'
 import { caseStorageKey } from '../logic/caseStorage'
 
 describe('sample cases', () => {
+  it('every case has a short お題, statement without targets, and an example tree', () => {
+    for (const c of SAMPLE_CASES) {
+      expect(c.odai.length).toBeLessThanOrEqual(30)
+      expect(c.intake.statement ?? '').not.toMatch(/倍|％|%/)
+      const ws = c.buildExample()
+      expect(ws.sheets.length).toBeGreaterThanOrEqual(1)
+      expect(Object.keys(ws.sheets[0].tree.nodes).length).toBeGreaterThan(3)
+      expect(applySampleSuspects(c, ws).pins.length).toBeGreaterThanOrEqual(1)
+    }
+  })
+
   it('ships 3 playable cases with distinct ids', () => {
-    expect(SAMPLE_CASES).toHaveLength(3)
+    expect(SAMPLE_CASES).toHaveLength(6)
     const ids = SAMPLE_CASES.map((c) => c.id)
-    expect(new Set(ids).size).toBe(3)
+    expect(new Set(ids).size).toBe(6)
     expect(DEFAULT_CASE_ID).toBe('blue-oasis')
     expect(getCase('yomiuri-news').label).toBe('東都日報')
     expect(getCase('hinomaru-kitchen').intake.target.multiplier).toBe(1.25)

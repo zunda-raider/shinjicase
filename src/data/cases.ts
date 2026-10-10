@@ -13,10 +13,8 @@ export interface SampleCase {
   id: string
   /** ナビ・ピッカー用の短い名前 */
   label: string
-  /** 一覧の一行キャッチ */
-  tagline: string
-  /** 事件の概要（調書） */
-  briefing: string
+  /** お題（一行。目標は書かない） */
+  odai: string
   intake: IntakeData
   /** 「例を読み込む」用の切り口ツリー */
   buildExample: () => EvidenceWorkspace
@@ -96,9 +94,7 @@ function buildBlueOasisExample(): EvidenceWorkspace {
 const BLUE_OASIS: SampleCase = {
   id: 'blue-oasis',
   label: 'ブルーオアシス',
-  tagline: 'ガソリンスタンド売上 ×1.3／3年',
-  briefing:
-    '地方都市のガソリンスタンド「ブルーオアシス」。給油と併設コンビニの合計売上が伸び悩んでいる。オーナーから「3年で売上を1.3倍にしてほしい」と相談が来た。言葉の定義・依頼人・目標を固めたうえで、切り口を変えて構造化し、ボトルネックを特定せよ。',
+  odai: 'ガソリンスタンドの売上向上施策',
   intake: {
     status: 'player',
     definition: {
@@ -171,9 +167,7 @@ function buildYomiuriExample(): EvidenceWorkspace {
 const YOMIURI: SampleCase = {
   id: 'yomiuri-news',
   label: '東都日報',
-  tagline: '新聞事業の売上 ×1.2／3年',
-  briefing:
-    '大手新聞社の事業部門。購読部数の減少とデジタル移行の狭間で、新聞事業全体の売上を3年で1.2倍にせよ、と役員から指示が出た。購読者×単価で未購読まで分解する王道の切り口と、広告＋購読の収益分解の両方を検討せよ。',
+  odai: '新聞事業の売上向上施策',
   intake: {
     status: 'player',
     definition: {
@@ -190,7 +184,7 @@ const YOMIURI: SampleCase = {
     storeCount: 400,
     extras: [{ id: 'x1', label: '媒体', value: '紙＋デジタル' }],
     statement:
-      '紙もデジタルも含めた新聞事業の売上を、3年で今の1.2倍にしてほしい。購読者が減っているのは分かっている。どこから手を打つべきか、構造で示してくれ。',
+      '購読者が減っている。紙もデジタルも含めて、どこから手を打つべきか見てほしい。',
   },
   buildExample: buildYomiuriExample,
   sampleSuspects: [
@@ -246,9 +240,7 @@ function buildHinomaruExample(): EvidenceWorkspace {
 const HINOMARU: SampleCase = {
   id: 'hinomaru-kitchen',
   label: 'ヒノマルキッチン',
-  tagline: '飲食店の売上回復（客数×単価）',
-  briefing:
-    '駅近の和食居酒屋「ヒノマルキッチン」。昨年から売上が落ち続け、オーナーは「客が来なくなった」と嘆く。売上＝客数×客単価で分解し、既存離反（頻度低下・リピート低下）まで掘り下げて打ち手を立案せよ。目標は2年で売上1.25倍。',
+  odai: '居酒屋の売上回復施策',
   intake: {
     status: 'player',
     definition: {
@@ -265,7 +257,7 @@ const HINOMARU: SampleCase = {
     storeCount: null,
     extras: [{ id: 'x1', label: '業態', value: '和食居酒屋' }],
     statement:
-      '客足が明らかに減った。単価を上げるか、回数を戻すか、新規か…どこがボトルネックか一緒に見てほしい。2年で売上を1.25倍に戻したい。',
+      '客足が明らかに減った。どこがボトルネックか一緒に見てほしい。',
   },
   buildExample: buildHinomaruExample,
   sampleSuspects: [
@@ -282,7 +274,148 @@ const HINOMARU: SampleCase = {
   ],
 }
 
-export const SAMPLE_CASES: SampleCase[] = [BLUE_OASIS, YOMIURI, HINOMARU]
+/* ------------------------------------------------------------------ */
+/* 4) 美容院                                                           */
+/* ------------------------------------------------------------------ */
+
+function buildSalonExample(): EvidenceWorkspace {
+  let t1 = createTree('売上')
+  t1 = split(t1, ROOT_ID, 'mul', ['来店客数', '客単価'])
+  t1 = split(t1, '来店客数', 'add', ['新規客', 'リピート客'])
+  t1 = split(t1, 'リピート客', 'mul', ['顧客数', '来店頻度'])
+  t1 = split(t1, '客単価', 'add', ['施術単価', '店販'])
+
+  let t2 = createTree('売上')
+  t2 = split(t2, ROOT_ID, 'mul', ['スタイリスト数', '1人あたり売上'])
+  t2 = split(t2, '1人あたり売上', 'mul', ['稼働率', '時間あたり売上'])
+
+  let ws: EvidenceWorkspace = {
+    version: 4,
+    seq: 2,
+    activeSheetId: 's1',
+    sheets: [sheet('s1', '客数×客単価', t1), sheet('s2', 'スタイリスト×生産性', t2)],
+  }
+  const freq = findLabel(ws.sheets[0].tree, '来店頻度')!
+  const store = findLabel(ws.sheets[0].tree, '店販')!
+  ws = addMeasure(ws, 's1', freq, '次回予約を会計時に取る').ws
+  ws = addMeasure(ws, 's1', store, 'ホームケア商品の提案').ws
+  return ws
+}
+
+const SALON: SampleCase = {
+  id: 'hair-salon',
+  label: 'サロン・ルミエ',
+  odai: '美容院の売上向上施策',
+  intake: {
+    status: 'player',
+    definition: { term: '売上', meaning: '施術売上＋店販売上の合計' },
+    client: { name: 'サロン・ルミエ', role: 'オーナースタイリスト' },
+    target: { metric: '売上', multiplier: 1.2, years: 2 },
+    area: '郊外の住宅街',
+    scale: 'single',
+    storeCount: null,
+    extras: [{ id: 'x1', label: '席数', value: 'セット面6席' }],
+    statement: '常連さんは来てくれるけど、売上が頭打ちなんです。',
+  },
+  buildExample: buildSalonExample,
+  sampleSuspects: [
+    { sheetId: 's1', nodeLabel: '来店頻度', motive: '来店間隔が伸びてリピート売上が落ちている' },
+  ],
+}
+
+/* ------------------------------------------------------------------ */
+/* 5) 地方百貨店                                                       */
+/* ------------------------------------------------------------------ */
+
+function buildDeptExample(): EvidenceWorkspace {
+  let t1 = createTree('売上')
+  t1 = split(t1, ROOT_ID, 'mul', ['来店客数', '購買率', '客単価'])
+  t1 = split(t1, '来店客数', 'add', ['地元客', '観光客'])
+  t1 = split(t1, '地元客', 'add', ['シニア', 'ファミリー', '若年層'])
+
+  let t2 = createTree('売上')
+  t2 = split(t2, ROOT_ID, 'add', ['自営売場', 'テナント賃料', '外商', 'EC'])
+
+  let ws: EvidenceWorkspace = {
+    version: 4,
+    seq: 2,
+    activeSheetId: 's1',
+    sheets: [sheet('s1', '客数×購買率×単価', t1), sheet('s2', '収益源の内訳', t2)],
+  }
+  const young = findLabel(ws.sheets[0].tree, '若年層')!
+  const tour = findLabel(ws.sheets[0].tree, '観光客')!
+  ws = addMeasure(ws, 's1', young, '地元カフェ・雑貨のポップアップ誘致').ws
+  ws = addMeasure(ws, 's1', tour, '地域物産フロアと免税対応').ws
+  return ws
+}
+
+const DEPT: SampleCase = {
+  id: 'local-dept',
+  label: 'まるやま百貨店',
+  odai: '地方百貨店の売上を向上させる生き残り戦略',
+  intake: {
+    status: 'player',
+    definition: { term: '売上', meaning: '自営売場＋テナント＋外商＋ECの合計' },
+    client: { name: 'まるやま百貨店', role: '経営企画部長' },
+    target: { metric: '売上', multiplier: 1.15, years: 5 },
+    area: '地方都市の駅前',
+    scale: 'single',
+    storeCount: null,
+    extras: [{ id: 'x1', label: '競合', value: '郊外の大型SC' }],
+    statement: '郊外のショッピングモールにお客を取られている。このままでは閉店だ。',
+  },
+  buildExample: buildDeptExample,
+  sampleSuspects: [
+    { sheetId: 's1', nodeLabel: '若年層', motive: '若年層の来店理由がなく郊外SCに流れている' },
+  ],
+}
+
+/* ------------------------------------------------------------------ */
+/* 6) フィットネスジム                                                 */
+/* ------------------------------------------------------------------ */
+
+function buildGymExample(): EvidenceWorkspace {
+  let t1 = createTree('売上')
+  t1 = split(t1, ROOT_ID, 'mul', ['会員数', '会員単価'])
+  t1 = split(t1, '会員数', 'add', ['新規入会', '継続会員'])
+  t1 = split(t1, '継続会員', 'add', ['前月会員', '退会'])
+  t1 = split(t1, '会員単価', 'add', ['月会費', 'パーソナル等オプション'])
+
+  let ws: EvidenceWorkspace = {
+    version: 4,
+    seq: 1,
+    activeSheetId: 's1',
+    sheets: [sheet('s1', '会員数×会員単価', t1)],
+  }
+  const churn = findLabel(ws.sheets[0].tree, '退会')!
+  const opt = findLabel(ws.sheets[0].tree, 'パーソナル等オプション')!
+  ws = addMeasure(ws, 's1', churn, '入会3か月のトレーナー面談').ws
+  ws = addMeasure(ws, 's1', opt, '体組成測定つきパーソナル体験').ws
+  return ws
+}
+
+const GYM: SampleCase = {
+  id: 'fitness-gym',
+  label: 'アイアンボディ',
+  odai: 'フィットネスジムの売上向上施策',
+  intake: {
+    status: 'player',
+    definition: { term: '売上', meaning: '月会費＋オプション売上の合計' },
+    client: { name: 'アイアンボディ', role: '本部マーケティング担当' },
+    target: { metric: '売上', multiplier: 1.3, years: 3 },
+    area: '首都圏',
+    scale: 'chain',
+    storeCount: 25,
+    extras: [{ id: 'x1', label: '業態', value: '24時間ジム' }],
+    statement: '入会はそこそこあるのに、なぜか会員数が増えないんだよ。',
+  },
+  buildExample: buildGymExample,
+  sampleSuspects: [
+    { sheetId: 's1', nodeLabel: '退会', motive: '入会後数か月の退会が多く会員が積み上がらない' },
+  ],
+}
+
+export const SAMPLE_CASES: SampleCase[] = [BLUE_OASIS, YOMIURI, HINOMARU, SALON, DEPT, GYM]
 
 export const DEFAULT_CASE_ID = BLUE_OASIS.id
 

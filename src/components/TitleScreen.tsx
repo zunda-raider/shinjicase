@@ -1,5 +1,4 @@
 import { SAMPLE_CASES } from '../data/cases'
-import { formatTarget } from '../data/intake'
 
 interface Props {
   activeId: string
@@ -27,8 +26,7 @@ export function TitleScreen({ activeId, onOpen }: Props) {
             >
               <span className="title-case__no">FILE No.{String(i + 1).padStart(3, '0')}</span>
               <span className="title-case__name">{c.label}</span>
-              <span className="title-case__tag">{c.tagline}</span>
-              <span className="title-case__target">{formatTarget(c.intake.target)}</span>
+              <span className="title-case__tag">{c.odai}</span>
               <span className="title-case__stamp">{c.id === activeId ? '捜査中' : '未着手'}</span>
             </button>
           </li>
