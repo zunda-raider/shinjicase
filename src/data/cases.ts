@@ -129,7 +129,7 @@ const BLUE_OASIS: SampleCase = {
 }
 
 /* ------------------------------------------------------------------ */
-/* 2) 読売新聞風                                                       */
+/* 2) 東都日報（新聞・架空）                                                       */
 /* ------------------------------------------------------------------ */
 
 function buildYomiuriExample(): EvidenceWorkspace {
@@ -166,7 +166,7 @@ function buildYomiuriExample(): EvidenceWorkspace {
 
 const YOMIURI: SampleCase = {
   id: 'yomiuri-news',
-  label: '読売新聞風',
+  label: '東都日報',
   tagline: '新聞事業の売上 ×1.2／3年',
   briefing:
     '大手新聞社の事業部門。購読部数の減少とデジタル移行の狭間で、新聞事業全体の売上を3年で1.2倍にせよ、と役員から指示が出た。購読者×単価で未購読まで分解する王道の切り口と、広告＋購読の収益分解の両方を検討せよ。',
@@ -177,7 +177,7 @@ const YOMIURI: SampleCase = {
       meaning: '新聞事業の広告収入＋購読収入の合計',
     },
     client: {
-      name: '東都日報（架空）',
+      name: '東都日報',
       role: '事業本部長からの依頼',
     },
     target: { metric: '売上', multiplier: 1.2, years: 3 },

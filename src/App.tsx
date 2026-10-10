@@ -15,7 +15,6 @@ import { ResultPhase } from './components/ResultPhase'
 import { WarrantPhase } from './components/WarrantPhase'
 import { formatTarget } from './data/intake'
 import { applySampleSuspects, getCase } from './data/cases'
-import { PHASES } from './data/phases'
 import {
   REVISE_BONUS,
   baseScore,
@@ -353,25 +352,12 @@ export default function App() {
     setPhase('INTAKE')
   }
 
-  const phaseInfo = PHASES.find((p) => p.id === phase)
 
   return (
     <div className="app">
       <header className="app__header">
         <div className="app__brand">
-          <span className="app__badge">SHINJICASE</span>
           <h1 className="app__title">{PHASE_TITLES[phase]}</h1>
-          <p className="app__case">
-            {phaseInfo?.jp} · {caseData.title}
-          </p>
-          <button
-            type="button"
-            className="app__case-switch"
-            onClick={() => setPhase('INTAKE')}
-            title="事件ファイルを切り替える"
-          >
-            事件切替（{sample.label}）
-          </button>
         </div>
         <ScoreBoard
           score={displayScore}

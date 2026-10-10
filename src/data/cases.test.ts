@@ -14,7 +14,7 @@ describe('sample cases', () => {
     const ids = SAMPLE_CASES.map((c) => c.id)
     expect(new Set(ids).size).toBe(3)
     expect(DEFAULT_CASE_ID).toBe('blue-oasis')
-    expect(getCase('yomiuri-news').label).toContain('読売')
+    expect(getCase('yomiuri-news').label).toBe('東都日報')
     expect(getCase('hinomaru-kitchen').intake.target.multiplier).toBe(1.25)
   })
 
