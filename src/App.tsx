@@ -210,12 +210,10 @@ export default function App() {
     writeJson(caseStorageKey(caseId, 'report'), reportView)
   }, [caseId, reportView])
 
-  function handleToggleFeatured(measureKey: string) {
+  function handleSwapMeasure(index: number, measureKey: string) {
     const keys = reportView.cards.map((c) => c.measureKey)
-    const next = keys.includes(measureKey)
-      ? keys.filter((k) => k !== measureKey)
-      : [...keys, measureKey]
-    setReport(setFeaturedMeasures(reportView, next, reportMeasureList, intake))
+    keys[index] = measureKey
+    setReport({ ...setFeaturedMeasures(reportView, keys, reportMeasureList, intake), manual: true })
   }
 
   async function handleSubmitReport(goToResult = true) {
@@ -500,7 +498,7 @@ export default function App() {
           measures={reportMeasureList}
           warrant={warrantView}
           report={reportView}
-          onToggleFeatured={handleToggleFeatured}
+          onSwapMeasure={handleSwapMeasure}
           onSelectTab={(i) => setReport(setActiveCard(reportView, i))}
           onChangeCard={(i, patch) => setReport(updatePitchCard(reportView, i, patch))}
           error={scoreError}

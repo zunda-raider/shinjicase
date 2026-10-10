@@ -71,49 +71,51 @@ export function WarrantPhase({
           </label>
         </div>
 
-        <section className="warrant-axes" aria-label="評価軸">
-          <div className="warrant-axes__head">
-            <h3>評価軸（{axes.length}/{MAX_AXES}）</h3>
-          </div>
-          <ul className="warrant-axes__list">
-            {axes.map((a, i) => (
-              <li key={a.id}>
-                <span className="warrant-axes__idx">{i + 1}</span>
-                <input
-                  type="text"
-                  value={a.name}
-                  placeholder={`軸${i + 1}の名前…`}
-                  maxLength={20}
-                  aria-label={`評価軸 ${i + 1}`}
-                  onChange={(e) => onRenameAxis(a.id, e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="warrant-axes__del"
-                  disabled={axes.length <= MIN_AXES}
-                  title={axes.length <= MIN_AXES ? `最低 ${MIN_AXES} 本は必要` : 'この軸を削除'}
-                  aria-label={`${a.name || `軸${i + 1}`} を削除`}
-                  onClick={() => onRemoveAxis(a.id)}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-          {axes.length < MAX_AXES && (
-            <button type="button" className="btn btn--ghost warrant-axes__add" onClick={onAddAxis}>
-              ＋軸を追加
-            </button>
-          )}
-          {!canRate && (
-            <p className="warrant-axes__warn">
-              {axes.length < MIN_AXES
-                ? `軸を ${MIN_AXES} 本以上にしてください。`
-                : 'すべての軸に名前をつけてから評点できます。'}
-            </p>
-          )}
-        </section>
+        <div className="warrant-top">
+          <section className="warrant-axes" aria-label="評価軸">
+            <div className="warrant-axes__head">
+              <h3>評価軸</h3>
+            </div>
+            <ul className="warrant-axes__list">
+              {axes.map((a, i) => (
+                <li key={a.id}>
+                  <span className="warrant-axes__idx">{i + 1}</span>
+                  <input
+                    type="text"
+                    value={a.name}
+                    placeholder={`軸${i + 1}`}
+                    maxLength={20}
+                    aria-label={`評価軸 ${i + 1}`}
+                    onChange={(e) => onRenameAxis(a.id, e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="warrant-axes__del"
+                    disabled={axes.length <= MIN_AXES}
+                    title={axes.length <= MIN_AXES ? `最低 ${MIN_AXES} 本は必要` : 'この軸を削除'}
+                    aria-label={`${a.name || `軸${i + 1}`} を削除`}
+                    onClick={() => onRemoveAxis(a.id)}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {axes.length < MAX_AXES && (
+              <button type="button" className="btn btn--ghost warrant-axes__add" onClick={onAddAxis}>
+                ＋軸
+              </button>
+            )}
+            {!canRate && (
+              <p className="warrant-axes__warn">
+                {axes.length < MIN_AXES
+                  ? `軸を ${MIN_AXES} 本以上にしてください。`
+                  : 'すべての軸に名前をつけてから評点できます。'}
+              </p>
+            )}
+          </section>
 
+          <div className="warrant-top__table">
         {measures.length === 0 ? (
           <p className="suspect-list__empty">
             {allMeasures.length === 0
@@ -128,9 +130,10 @@ export function WarrantPhase({
                   <th scope="col" className="warrant-matrix__measure-h">
                     施策
                   </th>
-                  {axes.map((a) => (
-                    <th key={a.id} scope="col" className="warrant-matrix__axis-h">
-                      {a.name.trim() || '（未命名）'}
+                  {axes.map((a, i) => (
+                    <th key={a.id} scope="col" className="warrant-matrix__axis-h" title={a.name}>
+                      <span className="warrant-matrix__axis-no">{i + 1}</span>
+                      <span className="warrant-matrix__axis-name">{a.name.trim() || '—'}</span>
                     </th>
                   ))}
                   <th scope="col" className="warrant-matrix__score-h">
@@ -199,6 +202,9 @@ export function WarrantPhase({
             </table>
           </div>
         )}
+
+          </div>
+        </div>
 
         <section className="warrant-answer" aria-label="最終回答">
           <h3>最終回答（3行）</h3>

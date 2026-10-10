@@ -1,13 +1,12 @@
 import { GRADE_LABEL, namedAxes } from '../logic/warrant'
 import type { RankedMeasure } from '../logic/warrant'
-import { MAX_FEATURED } from '../logic/report'
 import type { ReportPitchCard, ReportState, WarrantState } from '../types'
 
 interface Props {
   measures: RankedMeasure[]
   warrant: WarrantState
   report: ReportState
-  onToggleFeatured: (measureKey: string) => void
+  onSwapMeasure: (index: number, measureKey: string) => void
   onSelectTab: (index: number) => void
   onChangeCard: (index: number, patch: Partial<Omit<ReportPitchCard, 'measureKey'>>) => void
   error: string | null
@@ -21,7 +20,7 @@ export function ReportPhase({
   measures,
   warrant,
   report,
-  onToggleFeatured,
+  onSwapMeasure,
   onSelectTab,
   onChangeCard,
   error,
@@ -45,47 +44,16 @@ export function ReportPhase({
           </button>
         )}
 
-        <section className="report-pick" aria-label="発表する施策を選ぶ">
-          <h3 className="report-block__title">発表する施策（最大{MAX_FEATURED}）</h3>
-          {measures.length === 0 ? (
-            <p className="suspect-list__empty">施策なし</p>
-          ) : (
-            <ul className="report-pick__list">
-              {measures.map((m) => {
-                const on = featuredKeys.has(m.key)
-                const full = !on && report.cards.length >= MAX_FEATURED
-                return (
-                  <li key={m.key}>
-                    <label className={`report-pick__item ${on ? 'is-on' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={on}
-                        disabled={full}
-                        onChange={() => onToggleFeatured(m.key)}
-                      />
-                      <span className="report-pick__rank">
-                        {m.score === null ? '—' : `${m.rank}位`}
-                      </span>
-                      <span className="report-pick__text">{m.text}</span>
-                      <span className="report-pick__meta">
-                        {m.number} {m.nodeLabel}
-                      </span>
-                    </label>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-        {report.cards.length > 0 && (
+        {report.cards.length === 0 ? (
+          <p className="suspect-list__empty">施策なし</p>
+        ) : report.cards.length > 0 && (
           <>
             <div className="report-tabs" role="tablist" aria-label="施策台本タブ">
               {report.cards.map((c, i) => {
                 const m = measures.find((x) => x.key === c.measureKey)
                 return (
+                  <span key={c.measureKey} className="report-tab-wrap">
                   <button
-                    key={c.measureKey}
                     type="button"
                     role="tab"
                     aria-selected={report.activeIndex === i}
@@ -94,6 +62,24 @@ export function ReportPhase({
                   >
                     {i + 1}. {m?.text ?? c.measureKey}
                   </button>
+                  {measures.length > report.cards.length && (
+                    <select
+                      className="report-tab__swap"
+                      aria-label={`施策${i + 1}を入れ替え`}
+                      title="施策を入れ替え"
+                      value={c.measureKey}
+                      onChange={(e) => onSwapMeasure(i, e.target.value)}
+                    >
+                      {measures
+                        .filter((x) => x.key === c.measureKey || !featuredKeys.has(x.key))
+                        .map((x) => (
+                          <option key={x.key} value={x.key}>
+                            {x.score === null ? '—' : `${x.rank}位`} {x.text}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                  </span>
                 )
               })}
             </div>

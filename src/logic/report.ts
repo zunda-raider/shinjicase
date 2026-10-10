@@ -125,9 +125,12 @@ export function ensureDefaultCards(
   measures: RankedMeasure[],
   intake: IntakeData,
 ): ReportState {
-  if (report.cards.length > 0 || measures.length === 0) return report
-  const cards = measures.slice(0, MAX_FEATURED).map((m) => createPitchCard(m, intake))
-  return { ...report, cards, activeIndex: 0 }
+  if (measures.length === 0) return report
+  if (report.manual && report.cards.length > 0) return report
+  const top = measures.slice(0, MAX_FEATURED).map((m) => m.key)
+  const cur = report.cards.map((c) => c.measureKey)
+  if (top.length === cur.length && top.every((k, i) => k === cur[i])) return report
+  return setFeaturedMeasures(report, top, measures, intake)
 }
 
 export function setActiveCard(report: ReportState, activeIndex: number): ReportState {

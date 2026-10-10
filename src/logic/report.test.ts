@@ -168,3 +168,23 @@ describe('createPitchCard seeds', () => {
     expect(card.effect).toContain('洗車サブスク')
   })
 })
+
+describe('auto featured', () => {
+  it('follows ranking until manual swap', () => {
+    const base = [
+      { key: 'a', score: 6, rank: 1 },
+      { key: 'b', score: 4, rank: 2 },
+      { key: 'c', score: 2, rank: 3 },
+    ].map((x) => ({
+      ...x, sheetId: 's1', sheetName: 'S', nodeId: 'n', number: '1', nodeLabel: 'N',
+      measureId: 'm', text: x.key, pinned: true, pinNo: 1, grades: {},
+    }))
+    let r = ensureDefaultCards(createReportState(), base, STUB_INTAKE)
+    expect(r.cards.map((c) => c.measureKey)).toEqual(['a', 'b'])
+    const reordered = [base[2], base[0], base[1]]
+    r = ensureDefaultCards(r, reordered, STUB_INTAKE)
+    expect(r.cards.map((c) => c.measureKey)).toEqual(['c', 'a'])
+    r = { ...r, manual: true }
+    expect(ensureDefaultCards(r, base, STUB_INTAKE).cards.map((c) => c.measureKey)).toEqual(['c', 'a'])
+  })
+})

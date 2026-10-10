@@ -217,4 +217,6 @@ export interface ReportState {
   cards: ReportPitchCard[]
   /** 表示中タブ */
   activeIndex: number
+  /** true = ユーザーがタブの施策を入れ替えた（自動選択しない） */
+  manual?: boolean
 }
