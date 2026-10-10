@@ -47,6 +47,15 @@ export const TREE_SIZE_COMPACT: TreeSize = {
   pad: 10,
 }
 
+/** OPERATION 左ペイン用（EVIDENCE の約70%） */
+export const TREE_SIZE_OPERATION: TreeSize = {
+  cardW: 110,
+  cardH: 52,
+  hGap: 32,
+  vGap: 44,
+  pad: 16,
+}
+
 export const ROOT_ID = 'root'
 export const MAX_PINS = 3
 

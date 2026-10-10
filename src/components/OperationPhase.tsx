@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
+import type React from 'react'
 import {
   LINK_SYMBOL,
-  TREE_SIZE_COMPACT,
+  TREE_SIZE_OPERATION,
   layoutTree,
   numberTree,
   subtreeIds,
 } from '../logic/evidenceTree'
-import { circled, operationCaptainLines, pinMeasureStatus } from '../logic/operation'
+import { circled, pinMeasureStatus } from '../logic/operation'
 import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
@@ -34,8 +35,50 @@ export function OperationPhase({
   onRemoveMeasure,
 }: Props) {
   const tree = sheet.tree
-  const size = TREE_SIZE_COMPACT
-  const layout = useMemo(() => layoutTree(tree, TREE_SIZE_COMPACT), [tree])
+  const size = TREE_SIZE_OPERATION
+  const layout = useMemo(() => layoutTree(tree, TREE_SIZE_OPERATION), [tree])
+  const [zoom, setZoom] = useState(1)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const drag = useRef<{ x: number; y: number; sl: number; st: number; moved: boolean; id: number } | null>(null)
+  const suppressClick = useRef(false)
+  const [panning, setPanning] = useState(false)
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return
+    const el = scrollRef.current
+    if (!el) return
+    drag.current = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop, moved: false, id: e.pointerId }
+    suppressClick.current = false
+  }
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const d = drag.current
+    const el = scrollRef.current
+    if (!d || !el) return
+    const dx = e.clientX - d.x
+    const dy = e.clientY - d.y
+    if (!d.moved && Math.hypot(dx, dy) > 4) {
+      d.moved = true
+      setPanning(true)
+      el.setPointerCapture?.(d.id)
+    }
+    if (d.moved) {
+      el.scrollLeft = d.sl - dx
+      el.scrollTop = d.st - dy
+    }
+  }
+  function onPointerUp() {
+    const d = drag.current
+    if (d?.moved) suppressClick.current = true
+    drag.current = null
+    setPanning(false)
+  }
+  function onClickCapture(e: React.MouseEvent) {
+    if (suppressClick.current) {
+      e.stopPropagation()
+      e.preventDefault()
+      suppressClick.current = false
+    }
+  }
   const numbers = useMemo(() => numberTree(tree), [tree])
   const order = useMemo(() => subtreeIds(tree, tree.rootId), [tree])
 
@@ -59,7 +102,6 @@ export function OperationPhase({
 
   const status = useMemo(() => pinMeasureStatus(ws, pins), [ws, pins])
   const missing = status.filter((s) => s.measureCount === 0)
-  const captainLines = useMemo(() => operationCaptainLines(ws, pins), [ws, pins])
 
   const cardIds = useMemo(() => {
     const ids = order.filter((id) => id !== tree.rootId)
@@ -122,10 +164,35 @@ export function OperationPhase({
         <p className="evidence__help">
           番号つきの箱をクリックすると右の作戦カードへ。赤丸は容疑者（ボトルネック）。ツリーの編集は EVIDENCE で。
         </p>
-        <div className="evidence__scroll operation__scroll">
+        <div className="operation__zoom" role="group" aria-label="ツリーの拡大縮小">
+          <button type="button" className="btn btn--ghost" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))} aria-label="縮小">－</button>
+          <span className="operation__zoom-val">{Math.round(zoom * 100)}%</span>
+          <button type="button" className="btn btn--ghost" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))} aria-label="拡大">＋</button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              setZoom(1)
+              scrollRef.current?.scrollTo({ left: 0, top: 0 })
+            }}
+          >
+            リセット
+          </button>
+          <span className="operation__zoom-hint">ドラッグで移動</span>
+        </div>
+        <div
+          ref={scrollRef}
+          className={`evidence__scroll operation__scroll is-pannable ${panning ? 'is-panning' : ''}`}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onClickCapture={onClickCapture}
+        >
+          <div className="operation__zoom-box" style={{ width: layout.width * zoom, height: layout.height * zoom }}>
           <div
             className="evidence__canvas"
-            style={{ width: layout.width, height: layout.height }}
+            style={{ width: layout.width, height: layout.height, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
           >
             <TreeThreads tree={tree} layout={layout} size={size} />
             {Object.values(tree.nodes).map((n) => {
@@ -191,22 +258,11 @@ export function OperationPhase({
               )
             })}
           </div>
+          </div>
         </div>
       </section>
 
       <section className="operation__plans" aria-label="作戦カード">
-        <div className="operation-captain">
-          <div className="operation-captain__head">
-            <span className="captain-panel__avatar" aria-hidden="true">★</span>
-            <span className="captain-panel__rank">CAPTAIN</span>
-          </div>
-          <ul className="operation-captain__lines">
-            {captainLines.map((l, i) => (
-              <li key={i}>{l}</li>
-            ))}
-          </ul>
-        </div>
-
         {missing.length > 0 && (
           <ul className="operation__warnings" aria-label="作戦のない容疑者">
             {missing.map((m) => (
