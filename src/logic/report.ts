@@ -27,7 +27,7 @@ export function seedPremises(intake: IntakeData) {
 }
 
 export function seedWhere(m: RankedMeasure): string {
-  return `${m.number} ${m.nodeLabel}（切り口：${m.sheetName}）`
+  return `${m.number} ${m.nodeLabel}`
 }
 
 export function seedEffect(m: RankedMeasure): string {

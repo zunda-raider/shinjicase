@@ -12,7 +12,6 @@ import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { QaText } from './QaText'
-import { measureKey } from '../logic/warrant'
 
 interface Props {
   ws: EvidenceWorkspace
@@ -26,8 +25,6 @@ interface Props {
   onRemoveMeasure: (nodeId: EvidenceNodeId, measureId: string) => void
   /** 閲覧専用（GHOST/GOD） */
   readOnly?: boolean
-  /** measureKey → 見込みなどの注記 */
-  measureNotes?: Record<string, string>
 }
 
 /** ⅳ 打ち手立案：左に番号つきツリー（読み取り専用）、右に番号ごとの作戦カード */
@@ -40,7 +37,6 @@ export function OperationPhase({
   onUpdateMeasure,
   onRemoveMeasure,
   readOnly,
-  measureNotes,
 }: Props) {
   const tree = sheet.tree
   const size = TREE_SIZE_OPERATION
@@ -92,7 +88,6 @@ export function OperationPhase({
 
   const [selectedId, setSelectedId] = useState<EvidenceNodeId | null>(null)
   const [hoverId, setHoverId] = useState<EvidenceNodeId | null>(null)
-  const [onlySuspects, setOnlySuspects] = useState(false)
   /** 施策がなくても表示するノード（ツリーでクリックしたもの） */
   const [revealed, setRevealed] = useState<EvidenceNodeId[]>([])
   const [focusMeasureId, setFocusMeasureId] = useState<string | null>(null)
@@ -115,14 +110,13 @@ export function OperationPhase({
     const ids = order.filter(
       (id) => id !== tree.rootId && ((sheet.measures[id]?.length ?? 0) > 0 || (!readOnly && revealed.includes(id))),
     )
-    const filtered = onlySuspects ? ids.filter((id) => pinNumbers[id] !== undefined) : ids
-    return [...filtered].sort((a, b) => {
+    return [...ids].sort((a, b) => {
       const pa = pinNumbers[a] ?? Infinity
       const pb = pinNumbers[b] ?? Infinity
       if (pa !== pb) return pa - pb
       return order.indexOf(a) - order.indexOf(b)
     })
-  }, [order, tree.rootId, onlySuspects, pinNumbers, sheet.measures, revealed, readOnly])
+  }, [order, tree.rootId, pinNumbers, sheet.measures, revealed, readOnly])
 
   const pinCountBySheet = useMemo(() => {
     const out: Record<string, number> = {}
@@ -139,7 +133,6 @@ export function OperationPhase({
     if (id === tree.rootId) return
     setSelectedId(id)
     if (!revealed.includes(id)) setRevealed((r) => [...r, id])
-    if (onlySuspects && pinNumbers[id] === undefined) setOnlySuspects(false)
     requestAnimationFrame(() =>
       cardRefs.current[id]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
     )
@@ -274,22 +267,12 @@ export function OperationPhase({
 
         <div className="operation__plans-header">
           <h2>作戦カード</h2>
-          <label className="operation__filter">
-            <input
-              type="checkbox"
-              checked={onlySuspects}
-              onChange={(e) => setOnlySuspects(e.target.checked)}
-            />
-            容疑者のみ表示
-          </label>
         </div>
 
         <div className="operation__cards">
           {cardIds.length === 0 && (
             <p className="suspect-list__empty">
-              {onlySuspects
-                ? '容疑者なし'
-                : '未分解'}
+              作戦なし
             </p>
           )}
           {cardIds.map((id) => {
@@ -333,11 +316,6 @@ export function OperationPhase({
                         {readOnly ? (
                           <span className="plan-card__text">
                             <QaText text={m.text} />
-                            {measureNotes?.[measureKey(sheet.id, id, m.id)] && (
-                              <span className="plan-card__note">
-                                見込み {measureNotes[measureKey(sheet.id, id, m.id)]}
-                              </span>
-                            )}
                           </span>
                         ) : (
                           <>

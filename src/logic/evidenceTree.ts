@@ -13,8 +13,8 @@ import type {
 /* 定数                                                                */
 /* ------------------------------------------------------------------ */
 
-export const CARD_W = 100
-export const CARD_H = 40
+export const CARD_W = 156
+export const CARD_H = 56
 /** 兄弟カードの間（演算子を置く幅） */
 export const H_GAP = 20
 /** 段と段の間 */

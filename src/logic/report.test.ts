@@ -164,7 +164,7 @@ describe('createPitchCard seeds', () => {
     )
     expect(card.premiseClient).toContain('ブルーオアシス')
     expect(card.goal).toContain('×1.3')
-    expect(card.where).toBe('1-1 既存顧客（切り口：顧客数×単価）')
+    expect(card.where).toBe('1-1 既存顧客')
     expect(card.effect).toContain('洗車サブスク')
   })
 })

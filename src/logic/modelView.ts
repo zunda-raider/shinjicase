@@ -132,13 +132,12 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
       const sheet = ws.sheets.find((s) => s.id === r.sheetId)!
       const no = numberTree(sheet.tree)[r.nodeId]
       pitches.push({
-        title: m.name,
+        title: m.name.replace(/^[A-Z]\s+/, ''),
         premise: premiseLine,
         current: current.join('／'),
         goal,
-        where: `${no} ${sheet.tree.nodes[r.nodeId].label}（切り口：${sheet.name}）／${text}`,
+        where: `${no} ${sheet.tree.nodes[r.nodeId].label}${body ? `：${body}` : ''}`,
         effect: [
-          m.estimate && m.estimate !== '—' ? `見込み ${m.estimate}` : '',
           ...notes.filter((n) => n.label !== '順番').map((n) => `${n.label}：${n.text}`),
         ]
           .filter(Boolean)

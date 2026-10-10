@@ -3444,3 +3444,6 @@
 .operation-node__count { font-size: 0.5rem; line-height: 10px; }
 .evidence__op { width: 18px; height: 18px; margin: -9px 0 0 -9px; font-size: 0.8rem; border-width: 1px; }
 .evidence__mtag { font-size: 0.5rem; }
+.evidence-card { padding: 0.18rem 0.65rem; gap: 0.15rem; }
+.evidence-card__label { font-size: 0.9rem; line-height: 1.2; }
+.evidence-card__no { font-size: 0.62rem; line-height: 13px; padding: 0 4px; }
