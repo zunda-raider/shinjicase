@@ -7,7 +7,6 @@ import { MAX_PINS } from '../logic/evidenceTree'
 import type { Phase } from '../types'
 import { PHASE_TITLES } from '../data/phases'
 import { EvidenceBoard } from './EvidenceBoard'
-import { IntakeMemos } from './IntakeMemos'
 import { OperationPhase } from './OperationPhase'
 import { ModeCycle } from './ModeCycle'
 import { PhaseNav, type ViewMode } from './PhaseNav'
@@ -107,23 +106,20 @@ export function ModelMode({ caseId, mode, initialPhase, onViewMode }: Props) {
         readOnly
       />
 
-      {phase !== 'INTAKE' && <IntakeMemos intake={view.intake} />}
+      <section className="intake-memos" aria-label="前提メモ">
+        {view.premises.map((m) => (
+          <div key={m.label} className="intake-memo">
+            <span className="intake-memo__pin" aria-hidden="true" />
+            <span className="intake-memo__label">{m.label}</span>
+            <span className="intake-memo__body">
+              <QaText text={m.value} />
+            </span>
+          </div>
+        ))}
+      </section>
 
       {phase === 'INTAKE' && (
         <section className="board model-intake" aria-label="前提">
-          <div className="board__header">
-            <h2>前提</h2>
-          </div>
-          <dl className="model-list">
-            {view.premises.map((p) => (
-              <div key={p.label} className="model-list__row">
-                <dt>{p.label}</dt>
-                <dd>
-                  <QaText text={p.value} />
-                </dd>
-              </div>
-            ))}
-          </dl>
           <div className="board__header">
             <h2>現状</h2>
           </div>
