@@ -7,7 +7,7 @@ import {
   numberTree,
   subtreeIds,
 } from '../logic/evidenceTree'
-import { filledMeasureCount, parsePinKey } from '../logic/workspace'
+import { parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { NodeLabel } from './NodeLabel'
@@ -200,8 +200,6 @@ export function OperationPhase({
               const p = layout.positions[n.id]
               if (!p) return null
               const isRoot = n.id === tree.rootId
-              const pinNo = pinNumbers[n.id]
-              const count = filledMeasureCount(sheet, n.id)
               return (
                 <div
                   key={n.id}
@@ -230,11 +228,6 @@ export function OperationPhase({
                     <span className="evidence-card__no">{numbers[n.id]}</span>
                   )}
                   <NodeLabel label={n.label} empty="（未記入）" />
-                  {!isRoot && (
-                    <span className={`operation-node__count ${count ? 'has' : ''}`}>
-                      {pinNo !== undefined && count === 0 && !readOnly ? '⚠ ' : ''}作戦 {count}
-                    </span>
-                  )}
                 </div>
               )
             })}
@@ -272,7 +265,6 @@ export function OperationPhase({
           {cardIds.map((id) => {
             const n = tree.nodes[id]
             const list = sheet.measures[id] ?? []
-            const count = filledMeasureCount(sheet, id)
             return (
               <article
                 key={id}
@@ -292,7 +284,6 @@ export function OperationPhase({
                 <header className="plan-card__head" onClick={() => selectFromCard(id)}>
                   <span className="plan-card__no">{numbers[id]}</span>
                   <span className="plan-card__name">{n.label.trim() || '（未記入）'}</span>
-                  <span className="plan-card__count">{count} 件</span>
                 </header>
                 {list.length > 0 && (
                   <ul className="plan-card__measures">
