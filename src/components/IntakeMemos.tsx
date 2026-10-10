@@ -8,7 +8,7 @@ interface Props {
 /** 前提メモ。全フェーズでボード上部に貼っておく。 */
 export function IntakeMemos({ intake }: Props) {
   const memos = [
-    { key: 'definition', label: '言葉の定義', body: formatDefinition(intake).replace('＝', ' ＝ ') },
+    { key: 'definition', label: '言葉の定義', body: formatDefinition(intake) },
     { key: 'client', label: '依頼人', body: formatClient(intake) },
     { key: 'target', label: 'TARGET', body: formatTarget(intake.target) },
   ]

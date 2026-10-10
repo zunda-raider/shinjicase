@@ -38,26 +38,15 @@ export function IntakeSetup({ intake, onChange, onFillExample }: Props) {
       <div className="intake-setup__grid">
         <label className="intake-field intake-field--wide">
           <span>言葉の定義</span>
-          <div className="intake-field__row">
-            <input
-              className="intake-field__term"
-              value={intake.definition.term}
-              placeholder={DEFAULT_METRIC}
-              maxLength={20}
-              aria-label="定義する言葉"
-              onChange={(e) => set({ definition: { ...intake.definition, term: e.target.value } })}
-            />
-            <span className="intake-field__eq">＝</span>
-            <input
-              value={intake.definition.meaning}
-              placeholder="範囲（例：給油＋コンビニ）"
-              maxLength={120}
-              aria-label="言葉の意味"
-              onChange={(e) =>
-                set({ definition: { ...intake.definition, meaning: e.target.value } })
-              }
-            />
-          </div>
+          <input
+            value={intake.definition.meaning}
+            placeholder="例：給油＋コンビニの売上合計"
+            maxLength={120}
+            aria-label="言葉の定義"
+            onChange={(e) =>
+              set({ definition: { ...intake.definition, meaning: e.target.value } })
+            }
+          />
         </label>
 
         <label className="intake-field">

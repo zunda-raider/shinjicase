@@ -59,9 +59,7 @@ export function formatTarget(t: IntakeData['target']): string {
 }
 
 export function formatDefinition(i: IntakeData): string {
-  const term = i.definition.term.trim() || i.target.metric.trim() || DEFAULT_METRIC
-  const meaning = i.definition.meaning.trim()
-  return meaning ? `${term}＝${meaning}` : `${term}＝（未定義）`
+  return i.definition.meaning.trim() || '（未定義）'
 }
 
 export function formatClient(i: IntakeData): string {

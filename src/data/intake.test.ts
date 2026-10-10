@@ -73,3 +73,17 @@ describe('player intake', () => {
     expect(packet.intake.premises).toHaveLength(3)
   })
 })
+
+describe('definition text', () => {
+  it('shows the definition as-is without a 「売上 ＝」 prefix', async () => {
+    const { formatDefinition } = await import('./intake')
+    const old = parseIntake({
+      status: 'stub',
+      definition: { term: '売上', meaning: '給油＋コンビニの合計' },
+      client: { name: 'A', role: 'B' },
+      target: { metric: '売上', multiplier: 1.2, years: 3 },
+    })!
+    expect(formatDefinition(old)).toBe('給油＋コンビニの合計')
+    expect(formatDefinition(emptyIntake())).toBe('（未定義）')
+  })
+})
