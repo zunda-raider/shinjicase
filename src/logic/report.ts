@@ -1,4 +1,4 @@
-import { formatTarget } from '../data/intake'
+import { formatClient, formatDefinition, formatTarget, otherPremises } from '../data/intake'
 import type {
   EvidenceWorkspace,
   IntakeData,
@@ -18,8 +18,8 @@ export const MAX_FEATURED = 2
 
 export function seedPremises(intake: IntakeData) {
   return {
-    premiseDefinition: `${intake.definition.term}＝${intake.definition.meaning}`,
-    premiseClient: `${intake.client.name}（${intake.client.role}）`,
+    premiseDefinition: formatDefinition(intake),
+    premiseClient: [formatClient(intake), ...otherPremises(intake).map((o) => `${o.label}：${o.value}`)].join('／'),
     premiseTarget: formatTarget(intake.target),
     goal: formatTarget(intake.target),
   }
@@ -176,7 +176,13 @@ export function updatePitchCard(
 /* ------------------------------------------------------------------ */
 
 export interface ScorePacket {
-  intake: { definition: string; client: string; target: string }
+  intake: {
+    definition: string
+    client: string
+    target: string
+    /** 場所・規模・追加の前提 */
+    premises: { label: string; value: string }[]
+  }
   sheets: { id: string; name: string; formula: string }[]
   suspects: { path: string; motive: string }[]
   axes: string[]
@@ -254,9 +260,10 @@ export function buildScorePacket(args: {
 
   return {
     intake: {
-      definition: `${intake.definition.term}＝${intake.definition.meaning}`,
-      client: `${intake.client.name}（${intake.client.role}）`,
+      definition: formatDefinition(intake),
+      client: formatClient(intake),
       target: formatTarget(intake.target),
+      premises: otherPremises(intake),
     },
     sheets,
     suspects: uniqueSuspects,

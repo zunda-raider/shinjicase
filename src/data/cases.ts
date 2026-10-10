@@ -20,7 +20,7 @@ export interface SampleCase {
   intake: IntakeData
   /** 「例を読み込む」用の切り口ツリー */
   buildExample: () => EvidenceWorkspace
-  /** 例ロード時に載せる容疑者（シートID + ノードラベル） */
+  /** 例ロード時に載せる容疑者（シートID + ノードラベル）。前提の例は intake */
   sampleSuspects?: { sheetId: string; nodeLabel: string; motive: string }[]
   /** 例ロード時に載せる施策 */
   sampleMeasures?: { sheetId: string; nodeLabel: string; texts: string[] }[]
@@ -100,7 +100,7 @@ const BLUE_OASIS: SampleCase = {
   briefing:
     '地方都市のガソリンスタンド「ブルーオアシス」。給油と併設コンビニの合計売上が伸び悩んでいる。オーナーから「3年で売上を1.3倍にしてほしい」と相談が来た。言葉の定義・依頼人・目標を固めたうえで、切り口を変えて構造化し、ボトルネックを特定せよ。',
   intake: {
-    status: 'stub',
+    status: 'player',
     definition: {
       term: '売上',
       meaning: '給油＋併設コンビニ等、店舗の売上合計',
@@ -110,8 +110,12 @@ const BLUE_OASIS: SampleCase = {
       role: '店舗オーナーからの相談',
     },
     target: { metric: '売上', multiplier: 1.3, years: 3 },
+    area: '地方都市・郊外',
+    scale: 'single',
+    storeCount: null,
+    extras: [{ id: 'x1', label: '併設', value: 'コンビニ・洗車機' }],
     statement:
-      'うちのスタンド、最近売上がいまいちなんだ。3年で今の1.3倍まで持っていきたい。給油もコンビニも合わせて考えてくれ。',
+      'うちのスタンド、最近売上がいまいちなんだ。給油もコンビニも合わせて考えてくれ。',
   },
   buildExample: buildBlueOasisExample,
   sampleSuspects: [
@@ -171,7 +175,7 @@ const YOMIURI: SampleCase = {
   briefing:
     '大手新聞社の事業部門。購読部数の減少とデジタル移行の狭間で、新聞事業全体の売上を3年で1.2倍にせよ、と役員から指示が出た。購読者×単価で未購読まで分解する王道の切り口と、広告＋購読の収益分解の両方を検討せよ。',
   intake: {
-    status: 'stub',
+    status: 'player',
     definition: {
       term: '売上',
       meaning: '新聞事業の広告収入＋購読収入の合計',
@@ -181,6 +185,10 @@ const YOMIURI: SampleCase = {
       role: '事業本部長からの依頼',
     },
     target: { metric: '売上', multiplier: 1.2, years: 3 },
+    area: '全国（首都圏中心）',
+    scale: 'chain',
+    storeCount: 400,
+    extras: [{ id: 'x1', label: '媒体', value: '紙＋デジタル' }],
     statement:
       '紙もデジタルも含めた新聞事業の売上を、3年で今の1.2倍にしてほしい。購読者が減っているのは分かっている。どこから手を打つべきか、構造で示してくれ。',
   },
@@ -242,7 +250,7 @@ const HINOMARU: SampleCase = {
   briefing:
     '駅近の和食居酒屋「ヒノマルキッチン」。昨年から売上が落ち続け、オーナーは「客が来なくなった」と嘆く。売上＝客数×客単価で分解し、既存離反（頻度低下・リピート低下）まで掘り下げて打ち手を立案せよ。目標は2年で売上1.25倍。',
   intake: {
-    status: 'stub',
+    status: 'player',
     definition: {
       term: '売上',
       meaning: '店内飲食の税抜売上（テイクアウト含む）',
@@ -252,6 +260,10 @@ const HINOMARU: SampleCase = {
       role: '店主からの相談',
     },
     target: { metric: '売上', multiplier: 1.25, years: 2 },
+    area: '駅前（都内）',
+    scale: 'single',
+    storeCount: null,
+    extras: [{ id: 'x1', label: '業態', value: '和食居酒屋' }],
     statement:
       '客足が明らかに減った。単価を上げるか、回数を戻すか、新規か…どこがボトルネックか一緒に見てほしい。2年で売上を1.25倍に戻したい。',
   },

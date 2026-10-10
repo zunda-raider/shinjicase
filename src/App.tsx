@@ -8,12 +8,13 @@ import { PhaseNav } from './components/PhaseNav'
 import { PhaseSteps } from './components/PhaseSteps'
 import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
-import { CasePicker } from './components/CasePicker'
+import { IntakeSetup } from './components/IntakeSetup'
+import { TitleScreen } from './components/TitleScreen'
 import { SuspectList } from './components/SuspectList'
 import { ReportPhase } from './components/ReportPhase'
 import { ResultPhase } from './components/ResultPhase'
 import { WarrantPhase } from './components/WarrantPhase'
-import { formatTarget } from './data/intake'
+import { formatTarget, intakeMetric } from './data/intake'
 import { applySampleSuspects, getCase } from './data/cases'
 import {
   REVISE_BONUS,
@@ -48,6 +49,7 @@ import type { ScoreResult } from './scoring/types'
 import {
   caseStorageKey,
   loadActiveCaseId,
+  loadCaseIntake,
   loadCaseReport,
   loadCaseSuspects,
   loadCaseWarrant,
@@ -79,6 +81,7 @@ import type {
   EvidenceNodeId,
   EvidenceTree,
   EvidenceWorkspace,
+  IntakeData,
   Phase,
   SheetId,
   ReportState,
@@ -100,11 +103,13 @@ const PHASE_TITLES: Record<Phase, string> = {
 export default function App() {
   const [caseId, setCaseId] = useState(() => loadActiveCaseId())
   const sample = getCase(caseId)
-  const intake = sample.intake
+  const [intake, setIntake] = useState<IntakeData>(() => loadCaseIntake(loadActiveCaseId()))
+  const [onTitle, setOnTitle] = useState(true)
+  const [intakeStep, setIntakeStep] = useState<'briefing' | 'statement'>('briefing')
   const [phase, setPhase] = useState<Phase>('INTAKE')
-  const metric = intake.target.metric
+  const metric = intakeMetric(intake)
   const [workspace, setWorkspace] = useState<EvidenceWorkspace>(() =>
-    loadCaseWorkspace(loadActiveCaseId(), getCase(loadActiveCaseId()).intake.target.metric),
+    loadCaseWorkspace(loadActiveCaseId(), intakeMetric(loadCaseIntake(loadActiveCaseId()))),
   )
   const [mode, setMode] = useState<BoardMode>('decompose')
 
@@ -128,6 +133,12 @@ export default function App() {
   useEffect(() => {
     saveActiveCaseId(caseId)
   }, [caseId])
+
+  useEffect(() => {
+    const { statement: _s, ...rest } = intake
+    void _s
+    writeJson(caseStorageKey(caseId, 'intake'), rest)
+  }, [caseId, intake])
 
   useEffect(() => {
     writeJson(caseStorageKey(caseId, 'evidence'), workspace)
@@ -324,13 +335,16 @@ export default function App() {
     setMode('decompose')
   }
 
-  function handleSelectCase(nextId: string) {
+  function handleOpenCase(nextId: string) {
+    setOnTitle(false)
+    setIntakeStep('briefing')
     if (nextId === caseId) {
       setPhase('INTAKE')
       return
     }
-    const next = getCase(nextId)
-    const m = next.intake.target.metric
+    const nextIntake = loadCaseIntake(nextId)
+    const m = intakeMetric(nextIntake)
+    setIntake(nextIntake)
     setCaseId(nextId)
     saveActiveCaseId(nextId)
     setWorkspace(loadCaseWorkspace(nextId, m))
@@ -351,6 +365,14 @@ export default function App() {
   }
 
 
+  function fillExampleIntake() {
+    setIntake({ ...sample.intake, status: 'player', statement: sample.intake.statement })
+  }
+
+  if (onTitle) {
+    return <TitleScreen activeId={caseId} onOpen={handleOpenCase} />
+  }
+
   return (
     <div className="app">
       <header className="app__header">
@@ -367,48 +389,61 @@ export default function App() {
 
       <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
-      <IntakeMemos intake={intake} />
+      {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 
-      {phase === 'INTAKE' && (
-        <div className="intake-home">
-          <CasePicker activeId={caseId} onSelect={handleSelectCase} />
-          <section className="board intake-brief" aria-label="選択中の事件">
-            <div className="board__header">
-              <h2>{sample.label} — 事件概要</h2>
-            </div>
-            <p className="intake-brief__text">{sample.briefing}</p>
-            {intake.statement && (
-              <blockquote className="intake-brief__statement">
-                <span className="intake-brief__quote-label">依頼人の調書</span>
-                <p>{intake.statement}</p>
-              </blockquote>
-            )}
-            <div className="intake-brief__actions">
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => setPhase('EVIDENCE')}
-              >
-                捜査を始める（EVIDENCE） ›
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => {
-                  const ex = sample.buildExample()
-                  const { pins: sp, motives: sm } = applySampleSuspects(sample, ex)
-                  setWorkspace(ex)
-                  setPins(sp)
-                  setMotives(sm)
-                  setMode('decompose')
-                  setPhase('EVIDENCE')
-                }}
-              >
-                例ツリーを載せて捜査開始
-              </button>
-            </div>
-          </section>
-        </div>
+      {phase === 'INTAKE' && intakeStep === 'briefing' && (
+        <section className="board intake-brief" aria-label="事件概要">
+          <div className="board__header">
+            <h2>{sample.label} — 事件概要</h2>
+          </div>
+          <p className="intake-brief__text">{sample.briefing}</p>
+          <div className="intake-brief__actions">
+            <button type="button" className="btn btn--ghost" onClick={() => setOnTitle(true)}>
+              ‹ 事件ファイル一覧
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => setIntakeStep('statement')}>
+              依頼人の調書へ ›
+            </button>
+          </div>
+        </section>
+      )}
+
+      {phase === 'INTAKE' && intakeStep === 'statement' && (
+        <section className="board intake-brief" aria-label="依頼人の調書">
+          <div className="board__header">
+            <h2>{sample.label} — 依頼人の調書</h2>
+          </div>
+          {intake.statement && (
+            <blockquote className="intake-brief__statement">
+              <p>「{intake.statement}」</p>
+            </blockquote>
+          )}
+          <IntakeSetup intake={intake} onChange={setIntake} onFillExample={fillExampleIntake} />
+          <div className="intake-brief__actions">
+            <button type="button" className="btn btn--ghost" onClick={() => setIntakeStep('briefing')}>
+              ‹ 事件概要
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => setPhase('EVIDENCE')}>
+              捜査を始める（EVIDENCE） ›
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                if (!intake.definition.meaning.trim()) fillExampleIntake()
+                const ex = sample.buildExample()
+                const { pins: sp, motives: sm } = applySampleSuspects(sample, ex)
+                setWorkspace(ex)
+                setPins(sp)
+                setMotives(sm)
+                setMode('decompose')
+                setPhase('EVIDENCE')
+              }}
+            >
+              例ツリーを載せて捜査開始
+            </button>
+          </div>
+        </section>
       )}
 
       {phase === 'EVIDENCE' && (

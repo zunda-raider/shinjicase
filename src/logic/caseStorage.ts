@@ -1,4 +1,6 @@
 import { DEFAULT_CASE_ID, getCase } from '../data/cases'
+import { emptyIntake, parseIntake } from '../data/intake'
+import type { IntakeData } from '../types'
 import type { EvidenceWorkspace, ReportState, WarrantState } from '../types'
 import { createReportState, loadReportState } from './report'
 import { isSuspectState, type SuspectState } from './operation'
@@ -18,9 +20,10 @@ const LEGACY = {
 
 export function caseStorageKey(
   caseId: string,
-  kind: 'evidence' | 'suspects' | 'warrant' | 'report',
+  kind: 'evidence' | 'suspects' | 'warrant' | 'report' | 'intake',
 ) {
   const map = {
+    intake: 'intake.v1',
     evidence: 'evidence.v4',
     suspects: 'suspects.v1',
     warrant: 'warrant.v1',
@@ -121,4 +124,10 @@ export function freshCaseBundle(metric: string) {
     warrant: createWarrantState(),
     report: createReportState(),
   }
+}
+
+/** プレイヤーが設定した前提。未設定なら空（調書は事件から） */
+export function loadCaseIntake(caseId: string): IntakeData {
+  const statement = getCase(caseId).intake.statement
+  return parseIntake(readJson(caseStorageKey(caseId, 'intake')), statement) ?? emptyIntake(statement)
 }

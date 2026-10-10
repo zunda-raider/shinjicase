@@ -63,9 +63,27 @@ export interface IntakeTarget {
   years: number
 }
 
+/** 業態の規模 */
+export type BusinessScale = 'chain' | 'single'
+
+/** プレイヤーが追加する前提（ラベル＋値） */
+export interface ExtraPremise {
+  id: string
+  label: string
+  value: string
+}
+
 export interface IntakeData {
-  /** 'stub' = 仮置き。将来プレイヤー入力に置き換える。 */
+  /** 'stub' = 旧仮置き。'player' = プレイヤーが設定。 */
   status: 'stub' | 'player'
+  /** 場所／エリア */
+  area?: string
+  /** チェーン or 1店舗 */
+  scale?: BusinessScale | null
+  /** チェーンの店舗数 */
+  storeCount?: number | null
+  /** 追加の前提 */
+  extras?: ExtraPremise[]
   definition: DefinitionCard
   client: ClientCard
   target: IntakeTarget
