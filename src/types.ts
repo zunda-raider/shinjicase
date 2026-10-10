@@ -150,3 +150,37 @@ export interface EvidenceWorkspace {
   /** シート採番用 */
   seq: number
 }
+
+/* ------------------------------------------------------------------ */
+/* ⅴ WARRANT（令状請求 = 打ち手評価）                                   */
+/* ------------------------------------------------------------------ */
+
+/** ○ / △ / ✖ */
+export type Grade = 'circle' | 'triangle' | 'cross'
+
+export type AxisId = string
+
+/** プレイヤーが自分で名づける評価軸（2〜3本） */
+export interface EvalAxis {
+  id: AxisId
+  name: string
+}
+
+/**
+ * 施策1件のキー。シート横断でも一意になるよう
+ * 「シートID/ノードID/施策ID」で持つ（番号は振り直されても壊れない）。
+ */
+export type MeasureKey = string
+
+/** 施策 × 軸 → 評点 */
+export type Ratings = Record<MeasureKey, Partial<Record<AxisId, Grade>>>
+
+export interface WarrantState {
+  version: 1
+  axes: EvalAxis[]
+  /** 軸ID採番用 */
+  axisSeq: number
+  ratings: Ratings
+  /** 最終回答（3行想定） */
+  finalAnswer: string
+}

@@ -10,6 +10,7 @@ import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
 import { StubPhase } from './components/StubPhase'
 import { SuspectList } from './components/SuspectList'
+import { WarrantPhase } from './components/WarrantPhase'
 import { STUB_INTAKE, formatTarget } from './data/intake'
 import { PHASES } from './data/phases'
 import {
@@ -20,6 +21,18 @@ import {
 import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
 import { isSuspectState } from './logic/operation'
 import type { SuspectState } from './logic/operation'
+import {
+  collectMeasures,
+  isFullyRated,
+  loadWarrantState,
+  namedAxes,
+  pruneWarrant,
+  addAxis as warrantAddAxis,
+  removeAxis as warrantRemoveAxis,
+  renameAxis as warrantRenameAxis,
+  setFinalAnswer,
+  setRating,
+} from './logic/warrant'
 import {
   activeSheet,
   addMeasure,
@@ -49,6 +62,7 @@ import type {
   EvidenceWorkspace,
   Phase,
   SheetId,
+  WarrantState,
 } from './types'
 import './App.css'
 
@@ -59,6 +73,8 @@ const V3_STORAGE_KEY = 'shinjicase.evidence.v3'
 const V2_STORAGE_KEY = 'shinjicase.evidence.v2'
 /** 赤ピン＋動機 */
 const SUSPECT_STORAGE_KEY = 'shinjicase.suspects.v1'
+/** ⅴ 評価軸・評点・最終回答 */
+const WARRANT_STORAGE_KEY = 'shinjicase.warrant.v1'
 /** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
 const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
@@ -103,6 +119,10 @@ function loadSuspects(): SuspectState {
   return isSuspectState(v) ? v : { pins: [], motives: {} }
 }
 
+function loadWarrant(): WarrantState {
+  return loadWarrantState(readJson(WARRANT_STORAGE_KEY))
+}
+
 export default function App() {
   const intake = STUB_INTAKE
   const [phase, setPhase] = useState<Phase>('EVIDENCE')
@@ -113,6 +133,7 @@ export default function App() {
   const [initialSuspects] = useState(loadSuspects)
   const [pins, setPins] = useState<CandidateId[]>(initialSuspects.pins)
   const [motives, setMotives] = useState<Record<CandidateId, string>>(initialSuspects.motives)
+  const [warrant, setWarrant] = useState<WarrantState>(loadWarrant)
   const [captainState, setCaptainState] = useState<CaptainState>('idle')
   const [challenge, setChallenge] = useState<ChallengeResult | null>(null)
   const [submittedOnce, setSubmittedOnce] = useState(false)
@@ -135,9 +156,21 @@ export default function App() {
     }
   }, [pins, motives])
 
+  // 消えた施策の評点は保存時に捨てる（表示用は下で prune）
+  const warrantView = useMemo(() => pruneWarrant(warrant, syncRootLabel(workspace, metric)), [warrant, workspace, metric])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WARRANT_STORAGE_KEY, JSON.stringify(warrantView))
+    } catch {
+      // 保存できなくても動作は続ける
+    }
+  }, [warrantView])
+
   // ルートは常に ⅰ の指標（INTAKE が変われば全切り口のルートも変わる）
   const ws = useMemo(() => syncRootLabel(workspace, metric), [workspace, metric])
   const sheet = activeSheet(ws)
+
   const tree = sheet.tree
 
   const candidates = useMemo(() => workspaceCandidates(ws), [ws])
@@ -170,6 +203,20 @@ export default function App() {
   )
 
   const displayScore = lastScored + reviseBonus
+
+  const warrantMeasures = useMemo(
+    () => collectMeasures(ws, activePins),
+    [ws, activePins],
+  )
+  const warrantDone = useMemo(() => {
+    const named = namedAxes(warrantView)
+    return (
+      named.length >= 2 &&
+      named.length === warrantView.axes.length &&
+      warrantMeasures.length > 0 &&
+      warrantMeasures.every((m) => isFullyRated(warrantView, m.key, named))
+    )
+  }, [warrantView, warrantMeasures])
 
   /** このシートのノード → 全体のピン番号 */
   const pinNumbers = useMemo(() => {
@@ -269,7 +316,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} />
 
       <IntakeMemos intake={intake} />
 
@@ -356,19 +403,22 @@ export default function App() {
       )}
 
       {phase === 'WARRANT' && (
-        <StubPhase
-          title="令状請求（打ち手評価）"
-          lines={[
-            '予定：作戦ごとに Impact・Feasibility・Time-Span を選ぶ。',
-            '予定：優先順位を自動で並べ、最終回答を3行で書いて署長の承認をもらう。',
-          ]}
+        <WarrantPhase
+          ws={ws}
+          pins={activePins}
+          warrant={warrantView}
+          onAddAxis={() => setWarrant((prev) => warrantAddAxis(prev))}
+          onRenameAxis={(id, name) => setWarrant((prev) => warrantRenameAxis(prev, id, name))}
+          onRemoveAxis={(id) => setWarrant((prev) => warrantRemoveAxis(prev, id))}
+          onRate={(key, axisId, grade) => setWarrant((prev) => setRating(prev, key, axisId, grade))}
+          onFinalAnswer={(text) => setWarrant((prev) => setFinalAnswer(prev, text))}
         />
       )}
 
-      <PhaseSteps active={phase} onSelect={setPhase} />
+      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} />
 
       <footer className="app__footer">
-        ケース面接モック · EVIDENCE（ⅱ分解 ＋ ⅲ容疑者）と OPERATION（ⅳ作戦）が動作 · ⅰ は仮置き、ⅴ はプレースホルダ
+        ケース面接モック · EVIDENCE（ⅱ・ⅲ）・OPERATION（ⅳ）・WARRANT（ⅴ）が動作 · ⅰ は仮置き
       </footer>
     </div>
   )

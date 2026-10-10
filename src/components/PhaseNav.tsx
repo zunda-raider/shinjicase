@@ -5,9 +5,10 @@ import { PhaseSteps } from './PhaseSteps'
 interface Props {
   active: Phase
   onSelect: (phase: Phase) => void
+  warrantDone?: boolean
 }
 
-export function PhaseNav({ active, onSelect }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -32,7 +33,7 @@ export function PhaseNav({ active, onSelect }: Props) {
           </span>
         ))}
       </div>
-      <PhaseSteps active={active} onSelect={onSelect} compact />
+      <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} />
     </nav>
   )
 }
