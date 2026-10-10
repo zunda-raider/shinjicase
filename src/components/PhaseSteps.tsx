@@ -5,12 +5,12 @@ interface Props {
   active: Phase
   onSelect: (phase: Phase) => void
   compact?: boolean
-  /** WARRANT まで到達して令状が承認できるとき true → 「完了」表示 */
+  /** WARRANT 完了時の見た目用（REPORT への進行は next で行う） */
   warrantDone?: boolean
 }
 
-/** 「‹ 前のフェーズ」「次のフェーズへ ›」（最後は「完了」） */
-export function PhaseSteps({ active, onSelect, compact, warrantDone }: Props) {
+/** 「‹ 前のフェーズ」「次のフェーズへ ›」 */
+export function PhaseSteps({ active, onSelect, compact }: Props) {
   const i = PHASES.findIndex((p) => p.id === active)
   const prev = PHASES[i - 1]
   const next = PHASES[i + 1]
@@ -37,14 +37,9 @@ export function PhaseSteps({ active, onSelect, compact, warrantDone }: Props) {
           次のフェーズへ{compact ? '' : `（${short(next.label)}）`} ›
         </button>
       ) : (
-        <button
-          type="button"
-          className={`btn phase-steps__done ${warrantDone ? 'btn--primary' : 'btn--ghost'}`}
-          disabled
-          title={warrantDone ? 'CAPTAIN が令状を承認できる状態です' : '評価を終えると完了になります'}
-        >
-          {warrantDone ? '完了 — 令状承認可' : '完了'}
-        </button>
+        <span className="phase-steps__end-hint">
+          {compact ? '提出は本編で' : '提出ボタンは上の最終報告パネルにあります'}
+        </span>
       )}
     </div>
   )

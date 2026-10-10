@@ -1,7 +1,7 @@
 # SHINJICASE — ケース面接 × 警察ドラマ風プラクティス（モック）
 
 米国警察捜査ドラマの体裁でケース面接を練習するアプリの **最小モック** です。  
-現在は **EVIDENCE（捜査ボード）**・**OPERATION（逮捕作戦）**・**WARRANT（令状請求）** が動きます。EVIDENCE で ⅱ・ⅲ、OPERATION で ⅳ、WARRANT で ⅴ（自分で立てた評価軸に ○△✖）を行います。ⅰ INTAKE は仮置きの値です。
+現在は **EVIDENCE〜REPORT** が動きます（ⅱ〜ⅵ）。ⅰ INTAKE は仮置き。REPORT で1分台本を編集し、Llama（またはオフライン）採点に提出します。
 
 ## フェーズ対応
 
@@ -12,10 +12,11 @@
 | ⅲ ボトルネック特定 | **EVIDENCE（分解と容疑者）** — 容疑者モード | 動作 | 同じツリーのカードに赤ピン（最大3）。右の欄に動機を書いて CAPTAIN に提出 |
 | ⅳ 打ち手立案 | **OPERATION（逮捕作戦）** | 動作 | 左に番号つきのツリー（容疑者は赤丸）、右に番号ごとの作戦カード。施策は手で入力 |
 | ⅴ 打ち手評価 | **WARRANT（令状請求）** | 動作 | 評価軸を自分で2〜3本入力し、OPERATION の施策に ○△✖。優先順位を自動表示、最終回答（3行） |
-| 面接官の突っ込み | **CAPTAIN（署長）** | 動作 | EVIDENCE：チャレンジ＋REVISE BONUS。OPERATION：容疑者に作戦があるか。WARRANT：軸・評点の抜けを指摘、揃えば令状承認 |
+| ⅵ 最終まとめ | **REPORT（最終報告）** | 動作 | 施策ごと（最大2）の1分台本タブ：前提／現状／ゴール／どこに効くか／効果。提出→Llama またはオフライン採点 |
+| 面接官の突っ込み | **CAPTAIN（署長）** | 動作 | EVIDENCE／OPERATION／WARRANT のスクリプト＋ REPORT の採点講評 |
 
 フェーズナビ：INTAKE › EVIDENCE（分解と容疑者）› OPERATION › WARRANT（クリックで行き来。起動時は EVIDENCE）  
-各画面の上（ナビの右端）と下に **「‹ 前のフェーズ」「次のフェーズへ ›」** ボタンがあります。WARRANT（最後）では「完了」になり、評点が揃うと「完了 — 令状承認可」と表示されます。
+各画面の上（ナビの右端）と下に **「‹ 前のフェーズ」「次のフェーズへ ›」** ボタンがあります。ナビ：INTAKE › EVIDENCE › OPERATION › WARRANT › **REPORT**。
 
 ## EVIDENCE の使い方
 
@@ -84,6 +85,32 @@
 6. 軸に名前があり、表示中の施策すべてに全軸の評点がつくと、CAPTAIN が「令状を承認できる」と出し、完了ボタンが「完了 — 令状承認可」になります。
 7. 評価軸・評点・最終回答は `shinjicase.warrant.v1` に保存されます。OPERATION で施策を消すと、その評点も消えます。
 
+## REPORT（最終報告）の使い方
+
+1. WARRANT のあとに **「次のフェーズへ ›」** で REPORT へ。
+2. WARRANT 順位の施策から **最大2つ** にチェック（タブが1枚＝施策1つ）。
+3. 各タブで **前提（定義・依頼人・目標）／現状／ゴール／施策（どこに効くか）／効果** を一目で編集。前提・ゴールは INTAKE から仮置き。
+4. **提出して採点** → Llama があれば講評つき総合点。なければ **オフライン採点**（画面に明示）。
+
+### Llama のつなぎ方
+
+開発サーバ（`npm run dev`）は `POST /api/score` を用意しています。
+
+1. **Ollama（推奨・ローカル）**
+   ```bash
+   ollama pull llama3.2
+   ollama serve   # http://127.0.0.1:11434
+   # 任意: OLLAMA_MODEL=llama3.2
+   ```
+2. **OpenAI 互換 API**（Groq / Together / OpenRouter / Fireworks 等）
+   ```bash
+   export LLAMA_BASE_URL=https://api.groq.com/openai/v1   # 例
+   export LLAMA_API_KEY=...
+   export LLAMA_MODEL=llama-3.3-70b-versatile
+   # または VITE_LLAMA_BASE_URL / VITE_LLAMA_API_KEY / VITE_LLAMA_MODEL
+   ```
+未接続時はクライアント側のオフライン採点が必ず動きます。
+
 ## ⅰ INTAKE の今後（データ構造だけ用意済み）
 
 `src/types.ts` の `IntakeData` と `src/data/intake.ts` の `STUB_INTAKE` が仮置きです。将来は次をプレイヤー入力に置き換えます（`status: 'stub' → 'player'`）。
@@ -115,6 +142,9 @@ npm test        # ロジックテスト（CAPTAIN・ツリー・切り口・施�
 - `src/components/SheetTabs.tsx` — 切り口（シート）のタブ（✎ で名前変更）
 - `src/components/OperationPhase.tsx` — OPERATION（左：番号つきツリー、右：作戦カード）
 - `src/components/WarrantPhase.tsx` — WARRANT（評価軸・○△✖ マトリクス・優先順位・最終回答）
+- `src/components/ReportPhase.tsx` — REPORT（施策タブの1分台本・提出・採点表示）
+- `src/scoring/` — Llama クライアント＋オフライン採点
+- `vite-plugin-score.ts` — 開発サーバの `/api/score`（Ollama / OpenAI 互換）
 - `src/components/TreeThreads.tsx` — ツリーの糸（EVIDENCE と OPERATION で共通）
 - `src/components/PhaseSteps.tsx` — 前／次のフェーズボタン
 - `src/components/SuspectList.tsx` — 赤ピンの容疑者と動機の欄
@@ -123,6 +153,7 @@ npm test        # ロジックテスト（CAPTAIN・ツリー・切り口・施�
 - `src/logic/workspace.ts` — 切り口（シート）の追加・名前変更・削除、ルートを ⅰ の指標にそろえる、全体で3本の赤ピン、施策の追加・編集・削除、保存データの移行
 - `src/logic/operation.ts` — 容疑者ごとの作戦数チェック、OPERATION の CAPTAIN のセリフ
 - `src/logic/warrant.ts` — 評価軸・○△✖・優先順位・WARRANT の CAPTAIN・保存
+- `src/logic/report.ts` — 1分台本カード・パケット組み立て
 - `src/logic/captain.ts` — CAPTAIN のチャレンジと採点
 - `src/data/` — 仮置き INTAKE、フェーズ定義
 

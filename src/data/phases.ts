@@ -9,4 +9,5 @@ export const PHASES: { id: Phase; label: string; jp: string; stub?: boolean }[] 
   },
   { id: 'OPERATION', label: 'OPERATION', jp: 'ⅳ 打ち手立案（逮捕作戦）' },
   { id: 'WARRANT', label: 'WARRANT', jp: 'ⅴ 打ち手評価（令状請求）' },
+  { id: 'REPORT', label: 'REPORT', jp: 'ⅵ 最終報告（まとめ・提出）' },
 ]

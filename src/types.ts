@@ -25,6 +25,7 @@ export type Phase =
   | 'EVIDENCE'
   | 'OPERATION'
   | 'WARRANT'
+  | 'REPORT'
 
 export type CaptainState =
   | 'idle'
@@ -183,4 +184,36 @@ export interface WarrantState {
   ratings: Ratings
   /** 最終回答（3行想定） */
   finalAnswer: string
+}
+
+/* ------------------------------------------------------------------ */
+/* ⅵ REPORT（最終報告 = 施策ごとの1分台本タブ）                         */
+/* ------------------------------------------------------------------ */
+
+/** 施策1つ分の1分台本。タブ1枚 = このカード1枚。 */
+export interface ReportPitchCard {
+  /** WarrantMeasure.key */
+  measureKey: string
+  /** 前提：言葉の定義（INTAKE から仮置き） */
+  premiseDefinition: string
+  /** 前提：依頼人 */
+  premiseClient: string
+  /** 前提：目標 */
+  premiseTarget: string
+  /** 現状 */
+  current: string
+  /** 最終ゴール */
+  goal: string
+  /** 施策：ツリーのどこに効くか */
+  where: string
+  /** 効果 */
+  effect: string
+}
+
+export interface ReportState {
+  version: 3
+  /** 発表する施策カード（最大2）。順序 = タブ順 */
+  cards: ReportPitchCard[]
+  /** 表示中タブ */
+  activeIndex: number
 }

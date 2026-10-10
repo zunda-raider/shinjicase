@@ -10,6 +10,7 @@ import { ScoreBoard } from './components/ScoreBoard'
 import { SheetTabs } from './components/SheetTabs'
 import { StubPhase } from './components/StubPhase'
 import { SuspectList } from './components/SuspectList'
+import { ReportPhase } from './components/ReportPhase'
 import { WarrantPhase } from './components/WarrantPhase'
 import { STUB_INTAKE, formatTarget } from './data/intake'
 import { PHASES } from './data/phases'
@@ -33,6 +34,18 @@ import {
   setFinalAnswer,
   setRating,
 } from './logic/warrant'
+import {
+  buildScorePacket,
+  ensureDefaultCards,
+  loadReportState,
+  pruneReportCards,
+  reportMeasures,
+  setActiveCard,
+  setFeaturedMeasures,
+  updatePitchCard,
+} from './logic/report'
+import { scoreCase } from './scoring/llamaClient'
+import type { ScoreResult } from './scoring/types'
 import {
   activeSheet,
   addMeasure,
@@ -62,6 +75,7 @@ import type {
   EvidenceWorkspace,
   Phase,
   SheetId,
+  ReportState,
   WarrantState,
 } from './types'
 import './App.css'
@@ -75,6 +89,7 @@ const V2_STORAGE_KEY = 'shinjicase.evidence.v2'
 const SUSPECT_STORAGE_KEY = 'shinjicase.suspects.v1'
 /** ⅴ 評価軸・評点・最終回答 */
 const WARRANT_STORAGE_KEY = 'shinjicase.warrant.v1'
+const REPORT_STORAGE_KEY = 'shinjicase.report.v1'
 /** 旧形式（自由配置カード）のキー。読み込まずに削除する。 */
 const LEGACY_STORAGE_KEYS = ['shinjicase.evidence.v1']
 
@@ -83,6 +98,7 @@ const PHASE_TITLES: Record<Phase, string> = {
   EVIDENCE: '捜査ボード — EVIDENCE',
   OPERATION: '逮捕作戦 — OPERATION',
   WARRANT: '令状請求 — WARRANT',
+  REPORT: '最終報告 — REPORT',
 }
 
 function readJson(key: string): unknown {
@@ -123,6 +139,10 @@ function loadWarrant(): WarrantState {
   return loadWarrantState(readJson(WARRANT_STORAGE_KEY))
 }
 
+function loadReport(): ReportState {
+  return loadReportState(readJson(REPORT_STORAGE_KEY))
+}
+
 export default function App() {
   const intake = STUB_INTAKE
   const [phase, setPhase] = useState<Phase>('EVIDENCE')
@@ -134,6 +154,10 @@ export default function App() {
   const [pins, setPins] = useState<CandidateId[]>(initialSuspects.pins)
   const [motives, setMotives] = useState<Record<CandidateId, string>>(initialSuspects.motives)
   const [warrant, setWarrant] = useState<WarrantState>(loadWarrant)
+  const [report, setReport] = useState<ReportState>(() => loadReport())
+  const [scoring, setScoring] = useState(false)
+  const [score, setScore] = useState<ScoreResult | null>(null)
+  const [scoreError, setScoreError] = useState<string | null>(null)
   const [captainState, setCaptainState] = useState<CaptainState>('idle')
   const [challenge, setChallenge] = useState<ChallengeResult | null>(null)
   const [submittedOnce, setSubmittedOnce] = useState(false)
@@ -217,6 +241,57 @@ export default function App() {
       warrantMeasures.every((m) => isFullyRated(warrantView, m.key, named))
     )
   }, [warrantView, warrantMeasures])
+
+  const reportMeasureList = useMemo(
+    () => reportMeasures(ws, activePins, warrantView),
+    [ws, activePins, warrantView],
+  )
+
+  const reportView = useMemo(() => {
+    let r = pruneReportCards(report, reportMeasureList)
+    r = ensureDefaultCards(r, reportMeasureList, intake)
+    return r
+  }, [report, reportMeasureList, intake])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reportView))
+    } catch {
+      // ignore
+    }
+  }, [reportView])
+
+  function handleToggleFeatured(measureKey: string) {
+    const keys = reportView.cards.map((c) => c.measureKey)
+    const next = keys.includes(measureKey)
+      ? keys.filter((k) => k !== measureKey)
+      : [...keys, measureKey]
+    setReport(setFeaturedMeasures(reportView, next, reportMeasureList, intake))
+  }
+
+  async function handleSubmitReport() {
+    setScoring(true)
+    setScoreError(null)
+    try {
+      const packet = buildScorePacket({
+        intake,
+        ws,
+        pins: activePins,
+        motives,
+        warrant: warrantView,
+        report: reportView,
+      })
+      const result = await scoreCase(packet)
+      setScore(result)
+    } catch (e) {
+      setScoreError(
+        e instanceof Error ? e.message : '採点に失敗しました。もう一度提出してください。',
+      )
+    } finally {
+      setScoring(false)
+    }
+  }
+
 
   /** このシートのノード → 全体のピン番号 */
   const pinNumbers = useMemo(() => {
@@ -415,10 +490,25 @@ export default function App() {
         />
       )}
 
+      {phase === 'REPORT' && (
+        <ReportPhase
+          measures={reportMeasureList}
+          warrant={warrantView}
+          report={reportView}
+          onToggleFeatured={handleToggleFeatured}
+          onSelectTab={(i) => setReport(setActiveCard(reportView, i))}
+          onChangeCard={(i, patch) => setReport(updatePitchCard(reportView, i, patch))}
+          onSubmit={handleSubmitReport}
+          scoring={scoring}
+          score={score}
+          error={scoreError}
+        />
+      )}
+
       <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} />
 
       <footer className="app__footer">
-        ケース面接モック · EVIDENCE（ⅱ・ⅲ）・OPERATION（ⅳ）・WARRANT（ⅴ）が動作 · ⅰ は仮置き
+        ケース面接モック · EVIDENCE〜REPORT（ⅱ〜ⅵ）が動作 · ⅰ は仮置き
       </footer>
     </div>
   )
