@@ -367,7 +367,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} />
+      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
       <IntakeMemos intake={intake} />
 
@@ -508,8 +508,6 @@ export default function App() {
           onToggleFeatured={handleToggleFeatured}
           onSelectTab={(i) => setReport(setActiveCard(reportView, i))}
           onChangeCard={(i, patch) => setReport(updatePitchCard(reportView, i, patch))}
-          onSubmit={() => void handleSubmitReport(true)}
-          scoring={scoring}
           error={scoreError}
           hasScore={score != null}
           onOpenResult={() => setPhase('RESULT')}
@@ -527,7 +525,7 @@ export default function App() {
       )}
 
 
-      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} />
+      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
       <footer className="app__footer">
         ケース面接モック · サンプル事件3件 · INTAKE〜RESULT

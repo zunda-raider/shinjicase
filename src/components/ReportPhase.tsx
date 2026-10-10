@@ -10,8 +10,6 @@ interface Props {
   onToggleFeatured: (measureKey: string) => void
   onSelectTab: (index: number) => void
   onChangeCard: (index: number, patch: Partial<Omit<ReportPitchCard, 'measureKey'>>) => void
-  onSubmit: () => void
-  scoring: boolean
   error: string | null
   /** 直近の提出があるとき、RESULT への導線を出す */
   hasScore: boolean
@@ -26,8 +24,6 @@ export function ReportPhase({
   onToggleFeatured,
   onSelectTab,
   onChangeCard,
-  onSubmit,
-  scoring,
   error,
   hasScore,
   onOpenResult,
@@ -42,35 +38,12 @@ export function ReportPhase({
   return (
     <div className="report">
       <section className="board report__main" aria-label="最終報告（1分台本）">
-        <div className="board__header">
-          <h2>最終報告 — 1分発表の台本</h2>
-          <span className="board__hint">施策ごとにタブ1枚（最大{MAX_FEATURED}）</span>
-        </div>
-        <p className="evidence__help">
-          WARRANT の施策から最大{MAX_FEATURED}つ選び、各タブで
-          <b>前提／現状／ゴール／施策（どこに効くか）／効果</b>
-          を一目で編集する。提出すると採点結果（RESULT）画面へ進む。
-        </p>
-
-        <div className="report-submit report-submit--bar" aria-label="提出">
-          <button
-            type="button"
-            className="btn btn--primary report-submit__btn"
-            disabled={scoring || report.cards.length === 0}
-            onClick={onSubmit}
-          >
-            {scoring ? '採点中…' : hasScore ? '再提出して採点' : '提出して採点'}
+        {error && <p className="report-submit__err">{error}</p>}
+        {hasScore && (
+          <button type="button" className="report-score-toggle" onClick={onOpenResult}>
+            前回の採点結果（RESULT）を見る ›
           </button>
-          <p className="report-submit__hint">
-            Llama 接続時は講評つき。未接続時はオフライン採点。結果は RESULT（西部劇掲示）に出ます。
-          </p>
-          {error && <p className="report-submit__err">{error}</p>}
-          {hasScore && (
-            <button type="button" className="report-score-toggle" onClick={onOpenResult}>
-              採点結果（RESULT）を見る ›
-            </button>
-          )}
-        </div>
+        )}
 
         <section className="report-pick" aria-label="発表する施策を選ぶ">
           <h3 className="report-block__title">発表する施策（最大{MAX_FEATURED}）</h3>

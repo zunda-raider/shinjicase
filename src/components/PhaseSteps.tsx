@@ -8,10 +8,14 @@ interface Props {
   warrantDone?: boolean
   /** RESULT に点数があるか（ナビヒント用） */
   hasScore?: boolean
+  /** REPORT の提出（次へボタンの位置に出す） */
+  onSubmit?: () => void
+  submitDisabled?: boolean
+  scoring?: boolean
 }
 
 /** 「‹ 前のフェーズ」「次のフェーズへ ›」 */
-export function PhaseSteps({ active, onSelect, compact, hasScore }: Props) {
+export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, submitDisabled, scoring }: Props) {
   const i = PHASES.findIndex((p) => p.id === active)
   const prev = PHASES[i - 1]
   const next = PHASES[i + 1]
@@ -48,19 +52,14 @@ export function PhaseSteps({ active, onSelect, compact, hasScore }: Props) {
         ) : (
           <span />
         )}
-        {hasScore ? (
-          <button
-            type="button"
-            className="btn btn--primary phase-steps__next"
-            onClick={() => onSelect('RESULT')}
-          >
-            採点結果へ{compact ? '' : '（RESULT）'} ›
-          </button>
-        ) : (
-          <span className="phase-steps__end-hint">
-            {compact ? '提出は本編で' : '提出ボタンは上の最終報告パネルにあります'}
-          </span>
-        )}
+        <button
+          type="button"
+          className="btn btn--primary phase-steps__next phase-steps__submit"
+          disabled={submitDisabled || scoring}
+          onClick={() => onSubmit?.()}
+        >
+          {scoring ? '採点中…' : hasScore ? '再提出して採点 ›' : '提出して採点 ›'}
+        </button>
       </div>
     )
   }

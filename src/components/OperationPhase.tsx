@@ -161,9 +161,6 @@ export function OperationPhase({
             </select>
           </label>
         </div>
-        <p className="evidence__help">
-          番号つきの箱をクリックすると右の作戦カードへ。赤丸は容疑者（ボトルネック）。ツリーの編集は EVIDENCE で。
-        </p>
         <div className="operation__zoom" role="group" aria-label="ツリーの拡大縮小">
           <button type="button" className="btn btn--ghost" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))} aria-label="縮小">－</button>
           <span className="operation__zoom-val">{Math.round(zoom * 100)}%</span>

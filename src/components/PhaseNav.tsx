@@ -7,9 +7,12 @@ interface Props {
   onSelect: (phase: Phase) => void
   warrantDone?: boolean
   hasScore?: boolean
+  onSubmit?: () => void
+  submitDisabled?: boolean
+  scoring?: boolean
 }
 
-export function PhaseNav({ active, onSelect, warrantDone, hasScore }: Props) {
+export function PhaseNav({ active, onSelect, warrantDone, hasScore, onSubmit, submitDisabled, scoring }: Props) {
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -34,7 +37,7 @@ export function PhaseNav({ active, onSelect, warrantDone, hasScore }: Props) {
           </span>
         ))}
       </div>
-      <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} />
+      <PhaseSteps active={active} onSelect={onSelect} compact warrantDone={warrantDone} hasScore={hasScore} onSubmit={onSubmit} submitDisabled={submitDisabled} scoring={scoring} />
     </nav>
   )
 }
