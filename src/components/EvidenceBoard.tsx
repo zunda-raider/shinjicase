@@ -20,6 +20,7 @@ import {
 } from '../logic/evidenceTree'
 import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
 import { TreeThreads } from './TreeThreads'
+import { NodeLabel } from './NodeLabel'
 
 export type BoardMode = 'decompose' | 'suspect'
 
@@ -260,9 +261,7 @@ export function EvidenceBoard({
                     }}
                   />
                 ) : (
-                  <span className="evidence-card__label">
-                    {n.label.trim() || '（名前を入力）'}
-                  </span>
+                  <NodeLabel label={n.label} empty="（名前を入力）" />
                 )}
 
                 {isDecompose && !isEditing && (

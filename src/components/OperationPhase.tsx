@@ -11,6 +11,7 @@ import { circled } from '../logic/operation'
 import { filledMeasureCount, parsePinKey } from '../logic/workspace'
 import type { EvidenceNodeId, EvidenceSheet, EvidenceWorkspace, SheetId } from '../types'
 import { TreeThreads } from './TreeThreads'
+import { NodeLabel } from './NodeLabel'
 import { QaText } from './QaText'
 
 interface Props {
@@ -235,7 +236,7 @@ export function OperationPhase({
                   ) : (
                     <span className="evidence-card__no">{numbers[n.id]}</span>
                   )}
-                  <span className="evidence-card__label">{n.label.trim() || '（未記入）'}</span>
+                  <NodeLabel label={n.label} empty="（未記入）" />
                   {!isRoot && (
                     <span className={`operation-node__count ${count ? 'has' : ''}`}>
                       {pinNo !== undefined && count === 0 && !readOnly ? '⚠ ' : ''}作戦 {count}

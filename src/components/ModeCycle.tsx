@@ -1,8 +1,6 @@
 import type { ViewMode } from './PhaseNav'
 
-const NEXT: Record<ViewMode, ViewMode> = { NORMAL: 'GHOST', GHOST: 'GOD', GOD: 'NORMAL' }
-
-/** NORMAL → GHOST → GOD → NORMAL（模範データがなければ NORMAL のまま） */
+/** NORMAL / GHOST / GOD を直接切り替える */
 export function ModeCycle({
   mode,
   available,
@@ -13,13 +11,19 @@ export function ModeCycle({
   onChange: (m: ViewMode) => void
 }) {
   return (
-    <button
-      type="button"
-      className={`mode-cycle mode-cycle--${mode.toLowerCase()}`}
-      disabled={!available && mode === 'NORMAL'}
-      onClick={() => onChange(available ? NEXT[mode] : 'NORMAL')}
-    >
-      {mode}
-    </button>
+    <span className="mode-switch" role="group" aria-label="表示モード">
+      {(['NORMAL', 'GHOST', 'GOD'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          className={`mode-switch__seg mode-switch__seg--${m.toLowerCase()} ${m === mode ? 'is-active' : ''}`}
+          aria-pressed={m === mode}
+          disabled={m !== 'NORMAL' && !available}
+          onClick={() => m !== mode && onChange(m)}
+        >
+          {m}
+        </button>
+      ))}
+    </span>
   )
 }
