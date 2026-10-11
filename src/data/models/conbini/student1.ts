@@ -11,7 +11,7 @@ const seg = (morningExtra = false) =>
             ? node('朝（通勤客）', {
                 op: 'mul',
                 children: [
-                  node('レジの回転率', { op: 'mul', qa: '質疑2', children: leaves('レジ台数', '稼働率') }),
+                  node('レジの回転率', { kind: 'analysis', op: 'mul', qa: '質疑2', children: leaves('レジ台数', '稼働率') }),
                 ],
               })
             : node('朝（通勤客）'),

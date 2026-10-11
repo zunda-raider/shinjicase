@@ -24,7 +24,7 @@ export const STUDENT2: ModelStudent = {
             op: 'mul',
             children: [
               node('商圏人数'),
-              node('当店の選択率', { op: 'add', splitQa: '質疑5', children: leaves('リピート') }),
+              node('当店の選択率', { op: 'add', splitQa: '質疑5', children: [node('リピート', { kind: 'analysis' })] }),
               node('レジの回転率'),
             ],
           }),

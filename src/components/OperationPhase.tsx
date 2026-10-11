@@ -4,6 +4,7 @@ import {
   LINK_SYMBOL,
   TREE_SIZE_OPERATION,
   layoutTree,
+  nodeKind,
   numberTree,
   subtreeIds,
 } from '../logic/evidenceTree'
@@ -210,6 +211,7 @@ export function OperationPhase({
                     'evidence-card',
                     'operation-node',
                     isRoot ? 'is-root' : '',
+                    nodeKind(n) === 'analysis' ? 'is-analysis' : '',
                     !n.label.trim() ? 'is-blank' : '',
                     highlight === n.id ? 'is-highlight' : '',
                   ]

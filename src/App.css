@@ -3477,3 +3477,14 @@
 .fact-card--5 { border-left-color: #00838f; background: #dff2f3; }
 .fact-card--6 { border-left-color: #5d4037; background: #efe2d9; }
 .fact-card--7 { border-left-color: #777; background: #ececec; }
+/* 分析・課題ノード：角を少し丸める（分解は角ばったまま） */
+.evidence-card.is-analysis { border-radius: 10px; }
+.evidence__thread--analysis { stroke-dasharray: 4 3; }
+.evidence-card__kind {
+  position: absolute; left: 1px; bottom: 1px; width: 14px; height: 14px; padding: 0;
+  border: none; border-radius: 50%; background: transparent; color: #8a6a50;
+  font-size: 0.6rem; line-height: 14px; cursor: pointer; opacity: 0; pointer-events: none;
+}
+.evidence-card:hover .evidence-card__kind,
+.evidence-card.is-selected .evidence-card__kind { opacity: 1; pointer-events: auto; }
+.evidence-card__kind:hover { background: rgba(0, 0, 0, 0.15); }

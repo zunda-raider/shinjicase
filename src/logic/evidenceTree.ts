@@ -1,4 +1,5 @@
 import type {
+  NodeKind,
   Candidate,
   EvidenceNode,
   EvidenceNodeId,
@@ -128,7 +129,7 @@ export function decompose(
   labels: string[] = ['', ''],
 ): { tree: EvidenceTree; ids: EvidenceNodeId[] } {
   const node = tree.nodes[id]
-  if (!node || node.children.length > 0 || labels.length === 0) {
+  if (!node || splitKids(tree, id).length > 0 || labels.length === 0) {
     return { tree, ids: [] }
   }
   let t = tree
@@ -141,11 +142,11 @@ export function decompose(
       seq,
       nodes: {
         ...t.nodes,
-        [cid]: { id: cid, label, parentId: id, children: [] },
+        [cid]: { id: cid, label, parentId: id, children: [], kind: 'split' },
       },
     }
   }
-  t = patch(t, id, (n) => ({ ...n, children: ids, split: { kind } }))
+  t = patch(t, id, (n) => ({ ...n, children: [...ids, ...n.children], split: { kind } }))
   return { tree: t, ids }
 }
 
@@ -174,7 +175,7 @@ export function addChild(
       seq,
       nodes: {
         ...tree.nodes,
-        [id]: { id, label, parentId, children: [] },
+        [id]: { id, label, parentId, children: [], kind: 'split' },
         [parentId]: { ...parent, children },
       },
     },
@@ -189,6 +190,7 @@ export function addSibling(
 ): { tree: EvidenceTree; id: EvidenceNodeId } {
   const node = tree.nodes[id]
   if (!node || !node.parentId) return { tree, id: '' }
+  if (nodeKind(node) === 'analysis') return addAnalysisChild(tree, node.parentId, label)
   return addChild(tree, node.parentId, label, id)
 }
 
@@ -219,11 +221,76 @@ export function removeSubtree(tree: EvidenceTree, id: EvidenceNodeId): EvidenceT
   const parent = nodes[node.parentId]
   if (parent) {
     const children = parent.children.filter((c) => c !== id)
-    nodes[parent.id] =
-      children.length > 0
-        ? { ...parent, children }
-        : { id: parent.id, label: parent.label, parentId: parent.parentId, children }
+    nodes[parent.id] = { ...parent, children }
   }
+  return dropEmptySplit({ ...tree, nodes }, node.parentId)
+}
+
+/* ------------------------------------------------------------------ */
+/* ノードの種類（分解 / 分析・課題）                                   */
+/* ------------------------------------------------------------------ */
+
+export function nodeKind(n: EvidenceNode | undefined): NodeKind {
+  return n?.kind ?? 'split'
+}
+
+/** 式に入る子（分解）だけ */
+export function splitKids(tree: EvidenceTree, id: EvidenceNodeId): EvidenceNodeId[] {
+  return (tree.nodes[id]?.children ?? []).filter((c) => tree.nodes[c] && nodeKind(tree.nodes[c]) === 'split')
+}
+
+/** 分解の子が無くなった親から演算子を外す */
+function dropEmptySplit(tree: EvidenceTree, id: EvidenceNodeId): EvidenceTree {
+  const n = tree.nodes[id]
+  if (!n || !n.split || splitKids(tree, id).length > 0) return tree
+  const { split: _drop, ...rest } = n
+  void _drop
+  return { ...tree, nodes: { ...tree.nodes, [id]: rest } }
+}
+
+/** 分析・課題の子を末尾に足す（式には入らない） */
+export function addAnalysisChild(
+  tree: EvidenceTree,
+  parentId: EvidenceNodeId,
+  label = '',
+): { tree: EvidenceTree; id: EvidenceNodeId } {
+  const parent = tree.nodes[parentId]
+  if (!parent) return { tree, id: '' }
+  const { id, seq } = newId(tree)
+  return {
+    id,
+    tree: {
+      ...tree,
+      seq,
+      nodes: {
+        ...tree.nodes,
+        [id]: { id, label, parentId, children: [], kind: 'analysis' },
+        [parentId]: { ...parent, children: [...parent.children, id] },
+      },
+    },
+  }
+}
+
+/** 分解 ⇄ 分析・課題 を切り替える（ルートは対象外） */
+export function toggleNodeKind(tree: EvidenceTree, id: EvidenceNodeId): EvidenceTree {
+  const n = tree.nodes[id]
+  return setNodeKind(tree, id, nodeKind(n) === 'split' ? 'analysis' : 'split')
+}
+
+export function setNodeKind(tree: EvidenceTree, id: EvidenceNodeId, next: NodeKind): EvidenceTree {
+  const n = tree.nodes[id]
+  if (!n || !n.parentId) return tree
+  let t = patch(tree, id, (x) => ({ ...x, kind: next }))
+  const parent = t.nodes[n.parentId]
+  if (next === 'split' && parent && !parent.split) t = patch(t, parent.id, (x) => ({ ...x, split: { kind: 'add' } }))
+  return dropEmptySplit(t, n.parentId)
+}
+
+/** 旧データ：kind の無いノードを 'split' に */
+export function withNodeKinds(tree: EvidenceTree): EvidenceTree {
+  if (Object.values(tree.nodes).every((n) => n.kind)) return tree
+  const nodes: EvidenceTree['nodes'] = {}
+  for (const [k, n] of Object.entries(tree.nodes)) nodes[k] = n.kind ? n : { ...n, kind: 'split' }
   return { ...tree, nodes }
 }
 
@@ -258,9 +325,10 @@ export function cycleSplitTag(tree: EvidenceTree, id: EvidenceNodeId): EvidenceT
 /** 「顧客数 × 客単価」のような式 */
 export function splitFormula(tree: EvidenceTree, id: EvidenceNodeId): string {
   const node = tree.nodes[id]
-  if (!node?.split || node.children.length === 0) return ''
+  const kids = splitKids(tree, id)
+  if (!node?.split || kids.length === 0) return ''
   const op = ` ${LINK_SYMBOL[node.split.kind]} `
-  return node.children
+  return kids
     .map((c) => tree.nodes[c]?.label.trim() || '？')
     .join(op)
 }
@@ -274,10 +342,18 @@ export function layoutTree(
   size: TreeSize = TREE_SIZE_NORMAL,
 ): TreeLayout {
   const { cardW, cardH, hGap, vGap, pad } = size
+  // 分解の子を左、分析・課題の子を右にまとめる
+  const ordered = (ids: EvidenceNodeId[]) => {
+    const live = ids.filter((c) => tree.nodes[c])
+    return [
+      ...live.filter((c) => nodeKind(tree.nodes[c]) === 'split'),
+      ...live.filter((c) => nodeKind(tree.nodes[c]) === 'analysis'),
+    ]
+  }
   const widths: Record<string, number> = {}
   const measure = (id: string): number => {
     const n = tree.nodes[id]
-    const kids = n ? n.children.filter((c) => tree.nodes[c]) : []
+    const kids = n ? ordered(n.children) : []
     const sum =
       kids.reduce((acc, c) => acc + measure(c), 0) + hGap * Math.max(0, kids.length - 1)
     widths[id] = Math.max(cardW, sum)
@@ -296,7 +372,7 @@ export function layoutTree(
     maxDepth = Math.max(maxDepth, depth)
     const w = widths[id]
     positions[id] = { x: left + w / 2 - cardW / 2, y: rowY(depth) }
-    const kids = n.children.filter((c) => tree.nodes[c])
+    const kids = ordered(n.children)
     if (kids.length === 0) return
     const total =
       kids.reduce((acc, c) => acc + widths[c], 0) + hGap * (kids.length - 1)
@@ -306,6 +382,8 @@ export function layoutTree(
       cursor += widths[c] + hGap
     })
     for (let i = 0; i < kids.length - 1; i++) {
+      // 演算子は分解どうしの間だけ（分析・課題は式に入らない）
+      if (nodeKind(tree.nodes[kids[i]]) !== 'split' || nodeKind(tree.nodes[kids[i + 1]]) !== 'split') continue
       const a = positions[kids[i]]
       const b = positions[kids[i + 1]]
       operators.push({

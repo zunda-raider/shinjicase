@@ -588,7 +588,7 @@ export default function App() {
       <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
 
       <footer className="app__footer">
-        ケース面接モック · サンプル事件6件 · INTAKE〜RESULT
+        ケース面接モック · サンプル事件2件 · INTAKE〜RESULT
       </footer>
     </div>
   )

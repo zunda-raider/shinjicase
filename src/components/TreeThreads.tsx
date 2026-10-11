@@ -1,4 +1,4 @@
-import { TREE_SIZE_NORMAL } from '../logic/evidenceTree'
+import { TREE_SIZE_NORMAL, nodeKind } from '../logic/evidenceTree'
 import type { TreeSize } from '../logic/evidenceTree'
 import type { EvidenceTree, TreeLayout } from '../types'
 
@@ -20,6 +20,7 @@ export function TreeThreads({ tree, layout, size = TREE_SIZE_NORMAL }: Props) {
     >
       {Object.values(tree.nodes).map((n) => {
         const kids = n.children.filter((c) => layout.positions[c])
+        const analysis = kids.some((c) => nodeKind(tree.nodes[c]) === 'analysis') && !kids.some((c) => nodeKind(tree.nodes[c]) === 'split')
         const p = layout.positions[n.id]
         if (!p || kids.length === 0) return null
         const px = p.x + cardW / 2
@@ -35,7 +36,7 @@ export function TreeThreads({ tree, layout, size = TREE_SIZE_NORMAL }: Props) {
           <path
             key={n.id}
             d={d}
-            className={`evidence__thread evidence__thread--${n.split?.kind ?? 'mul'}`}
+            className={`evidence__thread evidence__thread--${analysis ? 'analysis' : n.split?.kind ?? 'mul'}`}
           />
         )
       })}

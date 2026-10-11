@@ -1,4 +1,4 @@
-import type { BusinessScale, LinkKind } from '../../types'
+import type { BusinessScale, LinkKind, NodeKind } from '../../types'
 import type { FactCard } from './factCards'
 
 /**
@@ -12,6 +12,8 @@ export interface ModelNode {
   children?: ModelNode[]
   qa?: string
   splitQa?: string
+  /** 明示の種類。省略時は classifyModelNode の一般ルール */
+  kind?: NodeKind
 }
 
 export interface ModelSheet {
@@ -82,4 +84,11 @@ export function node(label: string, extra: Omit<ModelNode, 'label'> = {}): Model
 
 export function leaves(...labels: string[]): ModelNode[] {
   return labels.map((l) => node(l))
+}
+
+/** 分析・課題（原因・理由・動機・課題・ニーズなど、式の項でないもの）と見なすラベル */
+export const ANALYSIS_LABEL_RE = /←|→|要因|動機|理由|課題|ニーズ|好奇心|取り込む|取りこぼし|需要（|：/
+
+export function classifyModelNode(n: ModelNode): NodeKind {
+  return n.kind ?? (ANALYSIS_LABEL_RE.test(n.label) ? 'analysis' : 'split')
 }

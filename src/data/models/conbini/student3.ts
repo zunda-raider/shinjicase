@@ -23,15 +23,15 @@ export const STUDENT3: ModelStudent = {
       tree: node('売上', {
         op: 'mul',
         children: [
-          node('客数', { op: 'add', splitQa: '質疑4', children: leaves('来店頻度') }),
-          node('客単価', { op: 'add', splitQa: '質疑3', children: leaves('1回あたりの点数') }),
+          node('客数', { op: 'add', splitQa: '質疑4', children: [node('来店頻度', { kind: 'analysis' })] }),
+          node('客単価', { op: 'add', splitQa: '質疑3', children: [node('1回あたりの点数', { kind: 'analysis' })] }),
         ],
       }),
     },
     {
       key: 'seg',
       name: '客層別',
-      tree: node('売上', { op: 'add', children: leaves('通勤客（朝に集中）', '住民（需要が見えにくい）') }),
+      tree: node('売上', { op: 'add', children: [node('通勤客（朝に集中）', { kind: 'analysis' }), node('住民（需要が見えにくい）', { kind: 'analysis' })] }),
     },
   ],
   focus: '最も解くべき課題：朝の通勤客の時間の制約と単価の低さ〔質疑1〕',
@@ -74,7 +74,7 @@ export const STUDENT3: ModelStudent = {
       {
         key: 'seg',
         name: '客層別',
-        tree: node('売上', { op: 'add', children: leaves('通勤客（朝の朝食需要）', '住民（朝昼夜まんべんなく）') }),
+        tree: node('売上', { op: 'add', children: [node('通勤客（朝の朝食需要）', { kind: 'analysis' }), node('住民（朝昼夜まんべんなく）', { kind: 'analysis' })] }),
       },
     ],
     focus: '朝の通勤客の時間の制約と単価の低さ、住民需要を取り込めていないこと',

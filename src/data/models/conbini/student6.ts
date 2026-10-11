@@ -1,4 +1,4 @@
-import { leaves, node, type ModelStudent } from '../types'
+import { node, type ModelStudent } from '../types'
 
 const premises: [string, string][] = [
   ['対象', '1店舗'],
@@ -31,6 +31,7 @@ export const STUDENT6: ModelStudent = {
                 op: 'add',
                 children: [
                   node(KEY, {
+                    kind: 'analysis',
                     op: 'add',
                     children: [
                       node('取り込む相手：単身・共働き世帯', { qa: '質疑5・6' }),
@@ -92,7 +93,10 @@ export const STUDENT6: ModelStudent = {
                 node('食事の回数'),
                 node('コンビニ選択率', {
                   op: 'add',
-                  children: leaves('コンビニの需要をより満たす', 'スーパー・ドラッグストアの需要をコンビニで満たす'),
+                  children: [
+                    node('コンビニの需要をより満たす', { kind: 'analysis' }),
+                    node('スーパー・ドラッグストアの需要をコンビニで満たす', { kind: 'analysis' }),
+                  ],
                 }),
               ],
             }),

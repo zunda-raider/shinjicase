@@ -1,8 +1,9 @@
 import { DEFAULT_METRIC } from '../data/intake'
 import type { FactCard } from '../data/models/factCards'
+import { classifyModelNode } from '../data/models/types'
 import type { ModelMode, ModelNode, ModelRef, ModelStudent } from '../data/models/types'
 import type { EvidenceTree, EvidenceWorkspace, IntakeData } from '../types'
-import { createTree, decompose, numberTree } from './evidenceTree'
+import { createTree, decompose, numberTree, setNodeKind } from './evidenceTree'
 import { measureKey } from './warrant'
 import { addMeasure, newSheet, pinKey } from './workspace'
 import { MAX_PINS } from './evidenceTree'
@@ -80,6 +81,7 @@ function buildTree(
     const r = decompose(t, id, src.op ?? 'add', kids.map((k) => k.label))
     t = r.tree
     kids.forEach((k, i) => {
+      t = setNodeKind(t, r.ids[i], classifyModelNode(k))
       const q = k.qa ?? src.splitQa
       if (mode === 'GOD' && q) qaOut[r.ids[i]] = q
       walk(k, r.ids[i])

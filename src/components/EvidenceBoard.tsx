@@ -8,7 +8,11 @@ import {
   MAX_PINS,
   TAG_LABEL,
   V_GAP,
+  addAnalysisChild,
   addSibling,
+  nodeKind,
+  splitKids,
+  toggleNodeKind,
   canPin,
   cycleSplitTag,
   decompose,
@@ -108,6 +112,13 @@ export function EvidenceBoard({
     if (r.ids.length === 0) return
     onChange(r.tree)
     startEdit(r.ids[0])
+  }
+
+  function handleAddAnalysis(id: EvidenceNodeId) {
+    const r = addAnalysisChild(tree, id)
+    if (!r.id) return
+    onChange(r.tree)
+    startEdit(r.id)
   }
 
   function handleAddSibling(id: EvidenceNodeId) {
@@ -228,6 +239,7 @@ export function EvidenceBoard({
                 className={[
                   'evidence-card',
                   isRoot ? 'is-root' : '',
+                  nodeKind(n) === 'analysis' ? 'is-analysis' : '',
                   isDecompose && selectedId === n.id ? 'is-selected' : '',
                   !n.label.trim() ? 'is-blank' : '',
                   pinned ? 'is-pinned' : '',
@@ -291,7 +303,7 @@ export function EvidenceBoard({
 
                 {isDecompose && !isEditing && (
                   <div className="evidence-card__actions" onClick={(e) => e.stopPropagation()}>
-                    {n.children.length === 0 && (
+                    {splitKids(tree, n.id).length === 0 && (
                       <>
                         <button
                           type="button"
@@ -311,6 +323,14 @@ export function EvidenceBoard({
                         </button>
                       </>
                     )}
+                    <button
+                      type="button"
+                      className="evidence-card__act"
+                      title="分析・課題（要因・理由・動機など）を下に足す"
+                      onClick={() => handleAddAnalysis(n.id)}
+                    >
+                      ◇ 分析
+                    </button>
                     {!isRoot && (
                       <button
                         type="button"
@@ -324,6 +344,20 @@ export function EvidenceBoard({
                   </div>
                 )}
 
+                {isDecompose && !isEditing && !isRoot && (
+                  <button
+                    type="button"
+                    className="evidence-card__kind"
+                    aria-label={`${n.label || '空欄カード'} を${nodeKind(n) === 'split' ? '分析・課題' : '分解'}に切り替え`}
+                    title={nodeKind(n) === 'split' ? '分析・課題にする' : '分解にする'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onChange(toggleNodeKind(tree, n.id))
+                    }}
+                  >
+                    ⇄
+                  </button>
+                )}
                 {isDecompose && !isEditing && !isRoot && (
                   <button
                     type="button"

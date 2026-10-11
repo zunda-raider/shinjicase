@@ -8,6 +8,7 @@ import type {
   SheetId,
 } from '../types'
 import {
+  withNodeKinds,
   MAX_PINS,
   ROOT_ID,
   canPin,
@@ -343,7 +344,7 @@ export function migrateWorkspace(
   ws = fixActive(ws)
   ws = {
     ...ws,
-    sheets: ws.sheets.map((s) => ({ ...s, measures: pruneMeasures(s.measures, s.tree) })),
+    sheets: ws.sheets.map((s) => ({ ...s, tree: withNodeKinds(s.tree), measures: pruneMeasures(s.measures, s.tree) })),
   }
   return syncRootLabel(ws, metric)
 }
