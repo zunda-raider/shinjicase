@@ -63,6 +63,8 @@ export interface ModelView {
   focus: string
   notes: { label: string; text: string }[]
   pitches: ModelPitch[]
+  /** 原文に評点があるときだけ */
+  warrant?: { axes: string[]; ratings: Record<string, string[]> }
 }
 
 function buildTree(
@@ -87,7 +89,11 @@ function buildTree(
   return t
 }
 
-export function buildModelView(student: ModelStudent, mode: ModelMode): ModelView {
+/** pitch の効果に入れない注記（評価・順番系） */
+const NOT_EFFECT_RE = /順番|優先順位|最も不確かな前提/
+
+export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
+  const student: ModelStudent = mode === 'GHOST' && base.ghost ? { ...base, ...base.ghost, warrant: undefined } : base
   const sheetIds: Record<string, string> = {}
   const sheetQa: Record<string, string> = {}
   const nodeQa: Record<string, string> = {}
@@ -132,7 +138,7 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     .filter((n) => n.text)
 
   const estimates: Record<string, string> = {}
-  const pitches: ModelPitch[] = []
+  let pitches: ModelPitch[] = []
   const premiseLine = premises.map((p) => `${p.label}：${p.value}`).join('／')
   const goal = premises.find((p) => p.label === 'ゴール')?.value ?? ''
   for (const m of student.measures) {
@@ -144,23 +150,26 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
     ws = added.ws
     const key = measureKey(r.sheetId, r.nodeId, added.id)
     if (m.estimate) estimates[key] = m.estimate
-    if (pitches.length < 2) {
+    {
       const sheet = ws.sheets.find((s) => s.id === r.sheetId)!
       const no = numberTree(sheet.tree)[r.nodeId]
       pitches.push({
-        title: m.name.replace(/^[A-Z]\s+/, ''),
+        title: m.name.replace(/^[A-Z]\s+/, '').replace(/（最優先）$/, ''),
+        ...(m.role ? { role: m.role } : {}),
         premise: premiseLine,
         current: current.join('／'),
         goal,
         where: `${no} ${sheet.tree.nodes[r.nodeId].label}${body ? `：${body}` : ''}`,
         effect: [
-          ...notes.filter((n) => n.label !== '順番').map((n) => `${n.label}：${n.text}`),
+          ...notes.filter((n) => !NOT_EFFECT_RE.test(n.label)).map((n) => `${n.label}：${n.text}`),
         ]
           .filter(Boolean)
           .join('／'),
       })
     }
   }
+
+  pitches = [...pitches.filter((p) => p.role), ...pitches.filter((p) => !p.role)].slice(0, 2)
 
   const definition = premises.find((p) => p.label === '売上の定義')?.value ?? ''
   const intake: IntakeData = {
@@ -181,8 +190,9 @@ export function buildModelView(student: ModelStudent, mode: ModelMode): ModelVie
   }
 
   return {
-    student,
+    student: base,
     mode,
+    ...(student.warrant ? { warrant: student.warrant } : {}),
     intake,
     premises,
     ws,

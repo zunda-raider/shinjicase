@@ -27,6 +27,7 @@ import {
   REVISE_BONUS,
   baseScore,
   evaluateSubmission,
+  withCaseChallenge,
 } from './logic/captain'
 import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
 import {
@@ -301,7 +302,7 @@ export default function App() {
   }
 
   function handleSubmit() {
-    setChallenge(evaluateSubmission(selections, caseData))
+    setChallenge(withCaseChallenge(evaluateSubmission(selections, caseData), getIdeal(caseId), selections.reduce((a, s) => a + s.motive.length, 0)))
     setCaptainState('challenging')
     setLastScored(baseScore(selections, caseData))
     if (submittedOnce && reviseBonus === 0) {

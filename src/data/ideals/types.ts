@@ -24,7 +24,11 @@ export interface IdealAnswer {
   acceptedFirstDecompositions: string[]
   /** 第1分解の判定パターン（ルート直下の子の名前で照合。groups の各要素は同義語） */
   decompositionPatterns?: { name: string; op: 'mul' | 'add'; groups: string[][]; need?: number }[]
+  /** 分解で「動かせない要素」を明言しているかの判定語（必須要素にある事件のみ） */
+  fixedFactorKeywords?: string[]
   hotSpots: StrategyLineage[]
+  /** 質疑の突っ込みパターン（CAPTAIN の問い・Llama 用） */
+  challenges?: { pattern: string; example: string }[]
   /** 不可とするもの */
   rejected: { text: string; keywords: string[] }[]
 }

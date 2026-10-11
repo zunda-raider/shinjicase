@@ -415,7 +415,51 @@ const GYM: SampleCase = {
   ],
 }
 
-export const SAMPLE_CASES: SampleCase[] = [BLUE_OASIS, YOMIURI, HINOMARU, SALON, DEPT, GYM]
+
+/* ------------------------------------------------------------------ */
+/* 7) コンビニ（例はパターン1）                                         */
+/* ------------------------------------------------------------------ */
+
+function buildConbiniExample(): EvidenceWorkspace {
+  let t1 = createTree('売上')
+  t1 = split(t1, ROOT_ID, 'mul', ['客数', '単価', '頻度'])
+  let t2 = createTree('売上')
+  t2 = split(t2, ROOT_ID, 'add', ['通勤客', '住民'])
+  t2 = split(t2, '通勤客', 'add', ['朝（通勤客）', '昼（通勤客）', '夜（通勤客）'])
+  t2 = split(t2, '住民', 'add', ['朝（住民）', '昼（住民）', '夜（住民）'])
+  let ws: EvidenceWorkspace = {
+    version: 4,
+    seq: 2,
+    activeSheetId: 's1',
+    sheets: [sheet('s1', '客数×単価×頻度', t1), sheet('s2', '客層×時間帯', t2)],
+  }
+  const morning = findLabel(ws.sheets[1].tree, '朝（通勤客）')!
+  ws = addMeasure(ws, 's2', morning, '朝に1,000円以上買うとコーヒーLサイズ無料').ws
+  return ws
+}
+
+const CONBINI: SampleCase = {
+  id: 'conbini',
+  label: 'コンビニ',
+  odai: 'コンビニの売上向上施策',
+  intake: {
+    status: 'player',
+    definition: { term: '売上', meaning: '' },
+    client: { name: '', role: '' },
+    target: { metric: '売上', multiplier: 1.2, years: 3 },
+    area: '都市部の住宅街とオフィスが混在するエリア',
+    scale: 'single',
+    storeCount: null,
+    extras: [{ id: 'x1', label: '客層', value: '通勤客と住民' }],
+    statement: 'うちの店の売上を伸ばしたい。何から手をつければいい？',
+  },
+  buildExample: buildConbiniExample,
+  sampleSuspects: [
+    { sheetId: 's2', nodeLabel: '朝（通勤客）', motive: '客数は最も多いのに、朝食だけ・コーヒー1杯だけで単価が低い' },
+  ],
+}
+
+export const SAMPLE_CASES: SampleCase[] = [BLUE_OASIS, YOMIURI, HINOMARU, SALON, DEPT, GYM, CONBINI]
 
 export const DEFAULT_CASE_ID = BLUE_OASIS.id
 

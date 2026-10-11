@@ -21,9 +21,9 @@ describe('sample cases', () => {
   })
 
   it('ships 3 playable cases with distinct ids', () => {
-    expect(SAMPLE_CASES).toHaveLength(6)
+    expect(SAMPLE_CASES).toHaveLength(7)
     const ids = SAMPLE_CASES.map((c) => c.id)
-    expect(new Set(ids).size).toBe(6)
+    expect(new Set(ids).size).toBe(7)
     expect(DEFAULT_CASE_ID).toBe('blue-oasis')
     expect(getCase('yomiuri-news').label).toBe('東都日報')
     expect(getCase('hinomaru-kitchen').intake.target.multiplier).toBe(1.25)

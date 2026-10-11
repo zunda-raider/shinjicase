@@ -1,3 +1,4 @@
+import type { IdealAnswer } from '../data/ideals/types'
 import type { CaseData, ChallengeResult, PrimeSelection } from '../types'
 
 const MIN_MOTIVE_LEN = 8
@@ -59,3 +60,11 @@ export function baseScore(selections: PrimeSelection[], caseData: CaseData): num
 }
 
 export const REVISE_BONUS = 25
+
+/** 事件ごとの突っ込みパターンから1つ、CAPTAIN の問いとして足す（決定的に選ぶ） */
+export function withCaseChallenge(r: ChallengeResult, ideal: IdealAnswer | null, seed: number): ChallengeResult {
+  const list = ideal?.challenges ?? []
+  if (!list.length || r.severity !== 'ok') return r
+  const c = list[Math.abs(seed) % list.length]
+  return { ...r, lines: [...r.lines, `CAPTAIN「${c.pattern}だ。${c.example}？」`] }
+}

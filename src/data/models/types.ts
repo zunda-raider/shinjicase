@@ -35,6 +35,8 @@ export interface ModelMeasure {
   node: ModelRef
   /** GHOST でそのノードが無いときの付け先 */
   ghostNode?: ModelRef
+  /** 原文が明示している位置づけ（例 メイン＝最優先） */
+  role?: string
 }
 
 export interface ModelReach {
@@ -47,7 +49,7 @@ export interface ModelReach {
 export interface ModelStudent {
   no: number
   title: string
-  reach: ModelReach
+  reach?: ModelReach
   /** 前提（ラベル・原文） */
   premises: [string, string][]
   scale?: BusinessScale
@@ -61,7 +63,16 @@ export interface ModelStudent {
   factCards: FactCard[]
   /** 試算・伸ばせる根拠・順番など */
   notes: { label: string; text: string }[]
+  /** 原文に評点がある場合のみ（軸名と、施策名→各軸の記号。空欄は ''） */
+  warrant?: { axes: string[]; ratings: Record<string, string[]> }
+  /** GHOST を原文で別に持つ事件（パターン節）。あればこちらを GHOST に使う */
+  ghost?: ModelGhost
 }
+
+export type ModelGhost = Pick<
+  ModelStudent,
+  'premises' | 'scale' | 'target' | 'current' | 'sheets' | 'focus' | 'pins' | 'measures' | 'factCards' | 'notes'
+> & { title?: string }
 
 export type ModelMode = 'GHOST' | 'GOD'
 

@@ -11,6 +11,7 @@ function allText(v: ReturnType<typeof buildModelView>): string {
 describe('modelView', () => {
   it('6人分ある（まるやま百貨店のみ）', () => {
     expect(getModelStudents('local-dept')).toHaveLength(6)
+    expect(getModelStudents('conbini')).toHaveLength(6)
     expect(getModelStudents('blue-oasis')).toHaveLength(0)
   })
 

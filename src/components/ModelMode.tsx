@@ -191,7 +191,30 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
           <div className="board__header">
             <h2>評価</h2>
           </div>
-          <p className="model-empty">評点：記載なし</p>
+          {view.warrant ? (
+            <table className="warrant-table model-warrant__table">
+              <thead>
+                <tr>
+                  <th>施策</th>
+                  {view.warrant.axes.map((a) => (
+                    <th key={a}>{a}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {view.student.measures.map((m) => (
+                  <tr key={m.name}>
+                    <td>{m.name.replace(/（最優先）$/, '')}</td>
+                    {view.warrant!.axes.map((a, i) => (
+                      <td key={a}>{view.warrant!.ratings[m.name]?.[i] || '—'}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="model-empty">評点：記載なし</p>
+          )}
           {view.notes.length > 0 && (
             <ul className="model-bullets">
               {view.notes.map((n) => (

@@ -213,12 +213,18 @@ function rawCriteria(input: ScoreInput): CriterionScore[] {
     s += maxDepth >= 2 ? 5 : maxDepth === 1 ? 2 : 0
     s += sheets.length ? 3 : 0
     s += sheets.length >= 2 ? 2 : 0
+    const fixedKw = ideal?.fixedFactorKeywords
+    const fixedText = [ptext, ...input.pitches.map((p) => p.current), ...Object.values(input.motives)].join(' ')
+    const saysFixed = !fixedKw || fixedKw.some((k) => fixedText.includes(k))
+    if (!saysFixed) s -= 4
     const fb = !sheets.length
       ? '売上を2つ以上の要素に分解する'
       : ideal?.decompositionPatterns && !accepted.length
         ? `許容する分解（${ideal.decompositionPatterns.map((p) => p.name).join('／')}）のどれかで切る`
-        : maxDepth < 2
-          ? 'もう一段深く分解する'
+        : !saysFixed
+          ? '動かせない要素を明言する'
+          : maxDepth < 2
+            ? 'もう一段深く分解する'
           : `${accepted.join('・') || '分解'}で2段以上切れている`
     push('decomposition', s, fb)
   }

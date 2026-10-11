@@ -33,8 +33,8 @@ describe('placeFactCards（全事件・全模範）', () => {
   })
 
   it('模範のカードは短い・GHOST は質疑カードを含まない', () => {
-    for (const st of getModelStudents('local-dept')) {
-      for (const card of st.factCards) expect([...card.text].length).toBeLessThanOrEqual(30)
+    for (const st of [...getModelStudents('local-dept'), ...getModelStudents('conbini')]) {
+      for (const card of [...st.factCards, ...(st.ghost?.factCards ?? [])]) expect([...card.text].length).toBeLessThanOrEqual(30)
       expect(buildModelView(st, 'GHOST').factCards.some((x) => x.qa)).toBe(false)
     }
   })
