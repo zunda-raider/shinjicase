@@ -20,7 +20,7 @@ export function TreeThreads({ tree, layout, size = TREE_SIZE_NORMAL }: Props) {
     >
       {Object.values(tree.nodes).map((n) => {
         const kids = n.children.filter((c) => layout.positions[c])
-        const analysis = kids.some((c) => nodeKind(tree.nodes[c]) === 'analysis') && !kids.some((c) => nodeKind(tree.nodes[c]) === 'split')
+        const analysis = !kids.some((c) => nodeKind(tree.nodes[c]) === 'split')
         const p = layout.positions[n.id]
         if (!p || kids.length === 0) return null
         const px = p.x + cardW / 2

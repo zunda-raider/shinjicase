@@ -24,14 +24,14 @@ export const STUDENT2: ModelStudent = {
             op: 'mul',
             children: [
               node('商圏人数'),
-              node('当店の選択率', { op: 'add', splitQa: '質疑5', children: [node('リピート', { kind: 'analysis' })] }),
+              node('当店の選択率', { op: 'add', splitQa: '質疑5', children: [node('リピート', { kind: 'extract' })] }),
               node('レジの回転率'),
             ],
           }),
           node('客単価', {
             op: 'add',
             splitQa: '質疑2',
-            children: [node('住宅客の需要（品揃えがオフィス寄り）', { kind: 'analysis' })],
+            children: [node('住宅客の需要（品揃えがオフィス寄り）', { kind: 'extract', short: '住宅客の需要' })],
           }),
         ],
       }),

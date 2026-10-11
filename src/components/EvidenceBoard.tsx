@@ -13,6 +13,8 @@ import {
   nodeKind,
   splitKids,
   toggleNodeKind,
+  KIND_LABEL,
+  NEXT_KIND,
   canPin,
   cycleSplitTag,
   decompose,
@@ -249,7 +251,7 @@ export function EvidenceBoard({
                 className={[
                   'evidence-card',
                   isRoot ? 'is-root' : '',
-                  nodeKind(n) === 'analysis' ? 'is-analysis' : '',
+                  nodeKind(n) !== 'split' ? `is-${nodeKind(n)}` : '',
                   isDecompose && selectedId === n.id ? 'is-selected' : '',
                   !n.label.trim() ? 'is-blank' : '',
                   pinned ? 'is-pinned' : '',
@@ -261,6 +263,7 @@ export function EvidenceBoard({
                   .join(' ')}
                 style={{ left: p.x, top: p.y, width: CARD_W, height: CARD_H }}
                 data-testid={`evidence-${n.id}`}
+                title={n.note}
                 data-label={n.label}
                 onClick={() => handleCardClick(n.id)}
                 onDoubleClick={() => {
@@ -336,7 +339,7 @@ export function EvidenceBoard({
                     <button
                       type="button"
                       className="evidence-card__act"
-                      title="分析・課題（要因・理由・動機など）を下に足す"
+                      title="分析（要因・動機など）を下に足す。⇄ で 一部抽出 に変えられる"
                       onClick={() => handleAddAnalysis(n.id)}
                     >
                       ◇ 分析
@@ -358,8 +361,8 @@ export function EvidenceBoard({
                   <button
                     type="button"
                     className="evidence-card__kind"
-                    aria-label={`${n.label || '空欄カード'} を${nodeKind(n) === 'split' ? '分析・課題' : '分解'}に切り替え`}
-                    title={nodeKind(n) === 'split' ? '分析・課題にする' : '分解にする'}
+                    aria-label={`${n.label || '空欄カード'} を${KIND_LABEL[NEXT_KIND[nodeKind(n)]]}に切り替え`}
+                    title={`${KIND_LABEL[nodeKind(n)]} → ${KIND_LABEL[NEXT_KIND[nodeKind(n)]]}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       onChange(toggleNodeKind(tree, n.id))

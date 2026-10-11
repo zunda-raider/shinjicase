@@ -183,6 +183,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
           onUpdateMeasure={() => {}}
           onRemoveMeasure={() => {}}
           readOnly
+          initialMeasures={view.initial}
         />
       )}
 

@@ -3487,3 +3487,6 @@
 .evidence-card__kind:hover { background: rgba(0, 0, 0, 0.15); }
 .evidence__scroll.is-fit, .operation__scroll { max-height: none; min-height: 0; }
 .evidence__fit { position: relative; margin: 0 auto; }
+.evidence-card.is-extract { border-radius: 10px; }
+.evidence-card.is-analysis { border-radius: 999px; }
+.plan-card__bullet.is-initial { color: #c62828; font-weight: 800; }

@@ -26,7 +26,7 @@ export const STUDENT4: ModelStudent = {
           node('購買率', {
             op: 'add',
             splitQa: '質疑2',
-            children: leaves('イベント参加 → 館内の回遊 → 購入'),
+            children: [node('イベント参加 → 館内の回遊 → 購入', { kind: 'analysis', short: 'イベント→回遊→購入' })],
           }),
           node('客単価', { op: 'mul', children: leaves('平均買上点数', '商品単価') }),
         ],

@@ -190,7 +190,7 @@ export function addSibling(
 ): { tree: EvidenceTree; id: EvidenceNodeId } {
   const node = tree.nodes[id]
   if (!node || !node.parentId) return { tree, id: '' }
-  if (nodeKind(node) === 'analysis') return addAnalysisChild(tree, node.parentId, label)
+  if (nodeKind(node) !== 'split') return addAnalysisChild(tree, node.parentId, label, nodeKind(node))
   return addChild(tree, node.parentId, label, id)
 }
 
@@ -253,6 +253,7 @@ export function addAnalysisChild(
   tree: EvidenceTree,
   parentId: EvidenceNodeId,
   label = '',
+  kind: NodeKind = 'analysis',
 ): { tree: EvidenceTree; id: EvidenceNodeId } {
   const parent = tree.nodes[parentId]
   if (!parent) return { tree, id: '' }
@@ -264,17 +265,20 @@ export function addAnalysisChild(
       seq,
       nodes: {
         ...tree.nodes,
-        [id]: { id, label, parentId, children: [], kind: 'analysis' },
+        [id]: { id, label, parentId, children: [], kind },
         [parentId]: { ...parent, children: [...parent.children, id] },
       },
     },
   }
 }
 
-/** 分解 ⇄ 分析・課題 を切り替える（ルートは対象外） */
+export const NEXT_KIND: Record<NodeKind, NodeKind> = { split: 'extract', extract: 'analysis', analysis: 'split' }
+export const KIND_LABEL: Record<NodeKind, string> = { split: '分解', extract: '一部抽出', analysis: '分析' }
+
+/** 分解 → 一部抽出 → 分析 → 分解 と切り替える（ルートは対象外） */
 export function toggleNodeKind(tree: EvidenceTree, id: EvidenceNodeId): EvidenceTree {
   const n = tree.nodes[id]
-  return setNodeKind(tree, id, nodeKind(n) === 'split' ? 'analysis' : 'split')
+  return setNodeKind(tree, id, NEXT_KIND[nodeKind(n)])
 }
 
 export function setNodeKind(tree: EvidenceTree, id: EvidenceNodeId, next: NodeKind): EvidenceTree {
@@ -345,10 +349,7 @@ export function layoutTree(
   // 分解の子を左、分析・課題の子を右にまとめる
   const ordered = (ids: EvidenceNodeId[]) => {
     const live = ids.filter((c) => tree.nodes[c])
-    return [
-      ...live.filter((c) => nodeKind(tree.nodes[c]) === 'split'),
-      ...live.filter((c) => nodeKind(tree.nodes[c]) === 'analysis'),
-    ]
+    return (['split', 'extract', 'analysis'] as const).flatMap((k) => live.filter((c) => nodeKind(tree.nodes[c]) === k))
   }
   const widths: Record<string, number> = {}
   const measure = (id: string): number => {
@@ -504,11 +505,11 @@ export function findNodeByPath(tree: EvidenceTree, path: string, opts: { skipRoo
   const parts = path.split('/').map((x) => x.trim())
   const last = parts[parts.length - 1]
   for (const n of Object.values(tree.nodes)) {
-    if (n.label !== last || (opts.skipRoot && !n.parentId)) continue
+    if ((n.label !== last && n.note !== last) || (opts.skipRoot && !n.parentId)) continue
     let p = n.parentId ? tree.nodes[n.parentId] : undefined
     let ok = true
     for (let i = parts.length - 2; i >= 0; i--) {
-      if (!p || p.label !== parts[i]) { ok = false; break }
+      if (!p || (p.label !== parts[i] && p.note !== parts[i])) { ok = false; break }
       p = p.parentId ? tree.nodes[p.parentId] : undefined
     }
     if (ok) return n.id

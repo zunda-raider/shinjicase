@@ -64,6 +64,8 @@ export interface ModelView {
   focus: string
   notes: { label: string; text: string }[]
   pitches: ModelPitch[]
+  /** 最初の5分（GHOST）でも使った施策の ID（OPERATION で番号を赤に） */
+  initial: string[]
   /** 原文に評点があるときだけ */
   warrant?: { axes: string[]; ratings: Record<string, string[]> }
 }
@@ -78,10 +80,11 @@ function buildTree(
     let kids = src.children ?? []
     if (mode === 'GHOST') kids = src.splitQa ? [] : kids.filter((k) => !k.qa)
     if (kids.length === 0) return
-    const r = decompose(t, id, src.op ?? 'add', kids.map((k) => k.label))
+    const r = decompose(t, id, src.op ?? 'add', kids.map((k) => k.short ?? k.label))
     t = r.tree
     kids.forEach((k, i) => {
       t = setNodeKind(t, r.ids[i], classifyModelNode(k))
+      if (k.short) t = { ...t, nodes: { ...t.nodes, [r.ids[i]]: { ...t.nodes[r.ids[i]], note: k.label } } }
       const q = k.qa ?? src.splitQa
       if (mode === 'GOD' && q) qaOut[r.ids[i]] = q
       walk(k, r.ids[i])
@@ -89,6 +92,38 @@ function buildTree(
   }
   walk(root, t.rootId)
   return t
+}
+
+function bigrams(t: string): Set<string> {
+  const c = [...t.replace(/[\s〔〕（）()、。・：A-Z]/g, '')]
+  return new Set(c.slice(0, -1).map((x, i) => x + c[i + 1]))
+}
+/** 文字バイグラムの Dice 係数 */
+export function similarity(a: string, b: string): number {
+  const x = bigrams(a)
+  const y = bigrams(b)
+  if (!x.size || !y.size) return 0
+  let n = 0
+  for (const g of x) if (y.has(g)) n++
+  return (2 * n) / (x.size + y.size)
+}
+const lastPart = (l: string) => l.split('/').pop() ?? l
+
+/**
+ * GOD の各施策が最初の5分（GHOST）にもあったか。
+ * 明示（initial）があればそれ。GHOST を別に持つ生徒は、名前が近い（≥0.4）か、同じノード（末尾ラベル）で名前がやや近い（≥0.3）か、
+ * 名前＋中身が十分近い（≥0.45）GHOST 施策があれば初出。GHOST を〔質疑〕除去で作る生徒は、中身に質疑以外の文が残るものが初出。
+ */
+export function matchInitialMeasures(st: ModelStudent): boolean[] {
+  return st.measures.map((m) => {
+    if (m.initial !== undefined) return m.initial
+    if (!st.ghost) return !QA_RE.test(m.body) || modeText(m.body, 'GHOST').length > 0
+    return st.ghost.measures.some((g) => {
+      const sameNode = lastPart(g.node.label) === lastPart(m.node.label) || lastPart(g.node.label) === lastPart(m.ghostNode?.label ?? '')
+      const nameSim = similarity(g.name, m.name)
+      return nameSim >= 0.4 || (sameNode && nameSim >= 0.3) || similarity(`${g.name}${g.body}`, `${m.name}${m.body}`) >= 0.45
+    })
+  })
 }
 
 /** pitch の効果に入れない注記（評価・順番系） */
@@ -140,10 +175,12 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
     .filter((n) => n.text)
 
   const estimates: Record<string, string> = {}
+  const initialFlags = mode === 'GHOST' ? student.measures.map(() => true) : matchInitialMeasures(base)
+  const initial: string[] = []
   let pitches: ModelPitch[] = []
   const premiseLine = premises.map((p) => `${p.label}：${p.value}`).join('／')
   const goal = premises.find((p) => p.label === 'ゴール')?.value ?? ''
-  for (const m of student.measures) {
+  for (const [mi, m] of student.measures.entries()) {
     const r = resolve(m.node) ?? resolve(m.ghostNode)
     if (!r) continue
     const body = modeText(m.body, mode)
@@ -152,6 +189,7 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
     ws = added.ws
     const key = measureKey(r.sheetId, r.nodeId, added.id)
     if (m.estimate) estimates[key] = m.estimate
+    if (initialFlags[mi]) initial.push(added.id)
     {
       const sheet = ws.sheets.find((s) => s.id === r.sheetId)!
       const no = numberTree(sheet.tree)[r.nodeId]
@@ -195,6 +233,7 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
     student: base,
     mode,
     ...(student.warrant ? { warrant: student.warrant } : {}),
+    initial,
     intake,
     premises,
     ws,

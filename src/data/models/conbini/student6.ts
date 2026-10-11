@@ -31,11 +31,12 @@ export const STUDENT6: ModelStudent = {
                 op: 'add',
                 children: [
                   node(KEY, {
-                    kind: 'analysis',
+                    kind: 'extract',
+                    short: 'スーパー・ドラッグの需要',
                     op: 'add',
                     children: [
-                      node('取り込む相手：単身・共働き世帯', { kind: 'analysis', qa: '質疑5・6' }),
-                      node('選ばれる理由：一人分の量・手軽さ', { qa: '質疑4・6' }),
+                      node('取り込む相手：単身・共働き世帯', { kind: 'extract', short: '単身・共働き世帯', qa: '質疑5・6' }),
+                      node('選ばれる理由：一人分の量・手軽さ', { kind: 'analysis', short: '一人分の量・手軽さ', qa: '質疑4・6' }),
                     ],
                   }),
                 ],

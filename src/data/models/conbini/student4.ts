@@ -21,15 +21,15 @@ export const STUDENT4: ModelStudent = {
           node('来店割合', {
             op: 'add',
             children: [
-              node('顧客側の要因', {
+              node('顧客側の要因', { kind: 'analysis',
                 op: 'add',
                 qa: '質疑5',
                 children: [
-                  node('必需品のニーズ（水・食べ物・傘・タバコ）', { kind: 'analysis', qa: '質疑5' }),
-                  node('好奇心（店外から見える仕掛け）', { kind: 'analysis', qa: '質疑6' }),
+                  node('必需品のニーズ（水・食べ物・傘・タバコ）', { kind: 'analysis', short: '必需品：水・食料・傘', qa: '質疑5' }),
+                  node('好奇心（店外から見える仕掛け）', { kind: 'analysis', short: '好奇心・店外の仕掛け', qa: '質疑6' }),
                 ],
               }),
-              node('外部の要因（天候）', { qa: '質疑4' }),
+              node('外部の要因（天候）', { kind: 'analysis', short: '天候（外部要因）', qa: '質疑4' }),
             ],
           }),
           node('客単価'),

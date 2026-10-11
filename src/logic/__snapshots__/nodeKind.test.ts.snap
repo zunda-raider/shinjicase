@@ -2,18 +2,18 @@
 
 exports[`ノードの種類（分解 / 分析・課題） > 式の項・セグメント（客層・時間帯・カテゴリ）は必ず分解。分析は原因・理由・動機・課題だけ 1`] = `
 [
-  "conbini1 レジの回転率",
-  "conbini2 リピート",
-  "conbini2 住宅客の需要（品揃えがオフィス寄り）",
-  "conbini3 1回あたりの点数",
-  "conbini3 来店頻度",
-  "conbini4 外部の要因（天候）",
-  "conbini4 好奇心（店外から見える仕掛け）",
-  "conbini4 必需品のニーズ（水・食べ物・傘・タバコ）",
-  "conbini4 顧客側の要因",
-  "conbini6 スーパー・ドラッグストアから取り込む需要",
-  "conbini6 取り込む相手：単身・共働き世帯",
-  "conbini6 選ばれる理由：一人分の量・手軽さ",
-  "local-dept4 イベント参加 → 館内の回遊 → 購入",
+  "conbini1 extract レジの回転率",
+  "conbini2 extract リピート",
+  "conbini2 extract 住宅客の需要",
+  "conbini3 extract 1回あたりの点数",
+  "conbini3 extract 来店頻度",
+  "conbini4 analysis 天候（外部要因）",
+  "conbini4 analysis 好奇心・店外の仕掛け",
+  "conbini4 analysis 必需品：水・食料・傘",
+  "conbini4 analysis 顧客側の要因",
+  "conbini6 analysis 一人分の量・手軽さ",
+  "conbini6 extract スーパー・ドラッグの需要",
+  "conbini6 extract 単身・共働き世帯",
+  "local-dept4 analysis イベント→回遊→購入",
 ]
 `;

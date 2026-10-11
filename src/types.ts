@@ -100,7 +100,7 @@ export interface IntakeData {
 /** × = 仕組み（掛け算） / ＋ = 内訳（足し算） */
 export type LinkKind = 'mul' | 'add'
 /** 分解（式の項）か、分析・課題（原因・理由・動機など、式に入らない）か */
-export type NodeKind = 'split' | 'analysis'
+export type NodeKind = 'split' | 'extract' | 'analysis'
 
 /** × のときの任意タグ：増減・生産・転換 */
 export type MechanismTag = 'increase' | 'production' | 'conversion'
@@ -122,8 +122,10 @@ export interface EvidenceNode {
   children: EvidenceNodeId[]
   /** 子を持つときの分け方（× or ＋）。子がなければ undefined */
   split?: Split
-  /** 省略時は 'split'（旧データ） */
+  /** 省略時は 'split'（旧データ）。extract＝一部抽出、analysis＝分析 */
   kind?: NodeKind
+  /** 原文など長い説明（ツールチップ） */
+  note?: string
 }
 
 export interface EvidenceTree {

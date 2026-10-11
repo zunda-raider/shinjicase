@@ -27,6 +27,8 @@ interface Props {
   onRemoveMeasure: (nodeId: EvidenceNodeId, measureId: string) => void
   /** 閲覧専用（GHOST/GOD） */
   readOnly?: boolean
+  /** 番号を赤にする施策 ID（最初の5分で使ったもの） */
+  initialMeasures?: string[]
 }
 
 /** ⅳ 打ち手立案：左に番号つきツリー（読み取り専用）、右に番号ごとの作戦カード */
@@ -39,6 +41,7 @@ export function OperationPhase({
   onUpdateMeasure,
   onRemoveMeasure,
   readOnly,
+  initialMeasures,
 }: Props) {
   const tree = sheet.tree
   const size = TREE_SIZE_OPERATION
@@ -216,7 +219,7 @@ export function OperationPhase({
                     'evidence-card',
                     'operation-node',
                     isRoot ? 'is-root' : '',
-                    nodeKind(n) === 'analysis' ? 'is-analysis' : '',
+                    nodeKind(n) !== 'split' ? `is-${nodeKind(n)}` : '',
                     !n.label.trim() ? 'is-blank' : '',
                     highlight === n.id ? 'is-highlight' : '',
                   ]
@@ -225,6 +228,7 @@ export function OperationPhase({
                   style={{ left: p.x, top: p.y, width: size.cardW, height: size.cardH }}
                   data-label={n.label}
                   data-number={numbers[n.id]}
+                  title={n.note}
                   onClick={() => selectFromTree(n.id)}
                   onMouseEnter={() => setHoverId(n.id)}
                   onMouseLeave={() => setHoverId(null)}
@@ -296,7 +300,7 @@ export function OperationPhase({
                   <ul className="plan-card__measures">
                     {list.map((m, i) => (
                       <li key={m.id}>
-                        <span className="plan-card__bullet">{i + 1}.</span>
+                        <span className={`plan-card__bullet${initialMeasures?.includes(m.id) ? ' is-initial' : ''}`}>{i + 1}.</span>
                         {readOnly ? (
                           <span className="plan-card__text">
                             <QaText text={m.text} />

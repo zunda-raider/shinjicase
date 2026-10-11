@@ -14,6 +14,8 @@ export interface ModelNode {
   splitQa?: string
   /** 明示の種類。省略時は classifyModelNode の一般ルール */
   kind?: NodeKind
+  /** カードに出す短いラベル（原文 label はツールチップ） */
+  short?: string
 }
 
 export interface ModelSheet {
@@ -35,6 +37,8 @@ export interface ModelMeasure {
   /** 見込み（例 ＋8） */
   estimate?: string
   node: ModelRef
+  /** 最初の5分（GHOST）で使った施策か。省略時は自動判定（matchInitialMeasures） */
+  initial?: boolean
   /** GHOST でそのノードが無いときの付け先 */
   ghostNode?: ModelRef
   /** 原文が明示している位置づけ（例 メイン＝最優先） */

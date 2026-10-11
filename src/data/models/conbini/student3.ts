@@ -23,8 +23,8 @@ export const STUDENT3: ModelStudent = {
       tree: node('売上', {
         op: 'mul',
         children: [
-          node('客数', { op: 'add', splitQa: '質疑4', children: [node('来店頻度', { kind: 'analysis' })] }),
-          node('客単価', { op: 'add', splitQa: '質疑3', children: [node('1回あたりの点数', { kind: 'analysis' })] }),
+          node('客数', { op: 'add', splitQa: '質疑4', children: [node('来店頻度', { kind: 'extract' })] }),
+          node('客単価', { op: 'add', splitQa: '質疑3', children: [node('1回あたりの点数', { kind: 'extract' })] }),
         ],
       }),
     },
