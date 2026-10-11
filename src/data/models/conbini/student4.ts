@@ -46,11 +46,13 @@ export const STUDENT4: ModelStudent = {
     {
       name: 'A 水・おにぎりの限定割引（最優先）',
       role: 'メイン',
+      reason: 'Impact◎・コスト○。必需品を求める学生や社会人に刺さる〔質疑1〕',
       body: '張り紙で告知する。必需品を求める学生や社会人に刺さる〔質疑1〕',
       node: { sheet: 'main', label: '必需品のニーズ（水・食べ物・傘・タバコ）' },
     },
     {
       name: 'B 菓子折りの包装サービス',
+      reason: 'Impact△・コスト△。差し入れ需要を持つ客は多くない。包装の手間とコーナーの設置が必要〔質疑1〕',
       body: '差し入れ需要を持つ客は多くない。包装の手間とコーナーの設置が必要〔質疑1〕',
       node: { sheet: 'main', label: '客単価' },
     },
@@ -77,13 +79,6 @@ export const STUDENT4: ModelStudent = {
       text: '駅の利用者が本当に学生と社会人中心か。高齢者が多い駅なら、必需品の施策は効きにくい〔質疑2〕。',
     },
   ],
-  warrant: {
-    axes: ['Impact', 'コスト'],
-    ratings: {
-      'A 水・おにぎりの限定割引（最優先）': ['◎', '○'],
-      'B 菓子折りの包装サービス': ['△', '△'],
-    },
-  },
   ghost: {
     premises: [
       ['前提の確認', '自分で仮定してよいかを確認'],
@@ -107,11 +102,13 @@ export const STUDENT4: ModelStudent = {
     measures: [
       {
         name: '水やおにぎりの限定割引',
+        reason: '必需品のニーズで来店割合を上げる',
         body: '必需品のニーズで来店割合を上げる',
         node: { sheet: 'main', label: '来店割合' },
       },
       {
         name: '菓子折りの包装サービス',
+        reason: '差し入れ需要で単価を上げる',
         body: '東京バナナのような菓子折りの包装サービス。差し入れ需要で単価を上げる',
         node: { sheet: 'main', label: '客単価' },
       },

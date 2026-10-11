@@ -181,33 +181,21 @@ export interface EvidenceWorkspace {
 /* ⅴ WARRANT（令状請求 = 打ち手評価）                                   */
 /* ------------------------------------------------------------------ */
 
-/** ○ / △ / ✖ */
-export type Grade = 'circle' | 'triangle' | 'cross'
-
-export type AxisId = string
-
-/** プレイヤーが自分で名づける評価軸（2〜3本） */
-export interface EvalAxis {
-  id: AxisId
-  name: string
-}
-
 /**
  * 施策1件のキー。シート横断でも一意になるよう
  * 「シートID/ノードID/施策ID」で持つ（番号は振り直されても壊れない）。
  */
 export type MeasureKey = string
 
-/** 施策 × 軸 → 評点 */
-export type Ratings = Record<MeasureKey, Partial<Record<AxisId, Grade>>>
+/** WARRANT の位置づけ（メインは1つ） */
+export type WarrantRole = 'main' | 'sub' | ''
 
+/** なぜその施策を選んだか */
 export interface WarrantState {
-  version: 1
-  axes: EvalAxis[]
-  /** 軸ID採番用 */
-  axisSeq: number
-  ratings: Ratings
-  /** 最終回答（3行想定） */
+  version: 2
+  roles: Record<MeasureKey, WarrantRole>
+  reasons: Record<MeasureKey, string>
+  /** 最終回答（旧データ互換。UI では使わない） */
   finalAnswer: string
 }
 

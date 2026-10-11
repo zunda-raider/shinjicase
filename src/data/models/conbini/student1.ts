@@ -51,6 +51,7 @@ export const STUDENT1: ModelStudent = {
   measures: [
     {
       name: 'A 朝食とコーヒーのセット特典',
+      reason: 'コーヒーの原価は1杯20円程度なので、単価の上昇で回収できる〔質疑1〕',
       body: '1,000円以上の購入でコーヒーL無料。コーヒーの原価は1杯20円程度なので、単価の上昇で回収できる〔質疑1〕',
       node: { sheet: 'seg', label: '通勤客/朝' },
     },
@@ -111,6 +112,7 @@ export const STUDENT1: ModelStudent = {
     measures: [
       {
         name: 'コーヒーLサイズ無料',
+        reason: 'まとめ買いで単価を上げ、差別化にもなる',
         body: '朝に1,000円以上買うとコーヒーLサイズ無料（まとめ買いで単価を上げ、差別化にもなる）',
         node: { sheet: 'seg', label: '通勤客/朝' },
       },

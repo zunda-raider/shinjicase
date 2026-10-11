@@ -8,9 +8,7 @@ import type {
   WarrantState,
 } from '../types'
 import {
-  GRADE_LABEL,
   collectMeasures,
-  namedAxes,
   rankMeasures,
   type RankedMeasure,
 } from './warrant'
@@ -93,16 +91,14 @@ function rSafe(n: number) {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0
 }
 
-/** WARRANT の順位付き施策。評点済みがなければ全施策。 */
+/** WARRANT の並び（メイン → サブ → OPERATION の順） */
 export function reportMeasures(
   ws: EvidenceWorkspace,
   pins: string[],
   warrant: WarrantState,
 ): RankedMeasure[] {
   const all = collectMeasures(ws, pins)
-  const ranked = rankMeasures(warrant, all)
-  const rated = ranked.filter((m) => m.score !== null)
-  return rated.length > 0 ? rated : ranked
+  return rankMeasures(warrant, all)
 }
 
 /** 消えた施策のカードを外し、activeIndex を直す */
@@ -186,7 +182,6 @@ export interface ScorePacket {
   }
   sheets: { id: string; name: string; formula: string }[]
   suspects: { path: string; motive: string }[]
-  axes: string[]
   /** 1分台本（施策タブごと） */
   pitches: {
     tab: number
@@ -199,8 +194,8 @@ export interface ScorePacket {
     goal: string
     where: string
     effect: string
-    grades: Record<string, string>
-    score: number | null
+    role: string
+    reason: string
     rank: number | null
   }[]
   allMeasures: {
@@ -208,8 +203,8 @@ export interface ScorePacket {
     sheet: string
     path: string
     text: string
-    grades: Record<string, string>
-    score: number | null
+    role: string
+    reason: string
     rank: number
   }[]
   warrantFinalAnswer: string
@@ -227,7 +222,6 @@ export function buildScorePacket(args: {
   rubric?: IdealAnswer | null
 }): ScorePacket {
   const { intake, ws, pins, motives, warrant, report, rubric } = args
-  const axes = namedAxes(warrant)
   const measures = reportMeasures(ws, pins, warrant)
   const byKey = new Map(measures.map((m) => [m.key, m]))
 
@@ -252,16 +246,6 @@ export function buildScorePacket(args: {
     uniqueSuspects.push({ path, motive: motives[key] ?? '' })
   }
 
-  const gradeMap = (m: RankedMeasure | undefined) => {
-    const grades: Record<string, string> = {}
-    if (!m) return grades
-    for (const a of axes) {
-      const g = m.grades[a.id]
-      if (g) grades[a.name.trim() || a.id] = GRADE_LABEL[g]
-    }
-    return grades
-  }
-
   return {
     intake: {
       definition: formatDefinition(intake),
@@ -271,7 +255,6 @@ export function buildScorePacket(args: {
     },
     sheets,
     suspects: uniqueSuspects,
-    axes: axes.map((a) => a.name.trim()),
     pitches: report.cards.map((c, i) => {
       const m = byKey.get(c.measureKey)
       return {
@@ -285,8 +268,8 @@ export function buildScorePacket(args: {
         goal: c.goal,
         where: c.where,
         effect: c.effect,
-        grades: gradeMap(m),
-        score: m?.score ?? null,
+        role: m?.role ?? '',
+        reason: m?.reason ?? '',
         rank: m?.rank ?? null,
       }
     }),
@@ -295,8 +278,8 @@ export function buildScorePacket(args: {
       sheet: m.sheetName,
       path: `${m.number} ${m.nodeLabel}`,
       text: m.text,
-      grades: gradeMap(m),
-      score: m.score,
+      role: m.role,
+      reason: m.reason,
       rank: m.rank,
     })),
     warrantFinalAnswer: warrant.finalAnswer,

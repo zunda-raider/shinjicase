@@ -57,7 +57,7 @@ describe('player intake', () => {
     const card = createPitchCard(
       {
         key: 'k', sheetId: 's1', sheetName: 'S', nodeId: 'n', number: '1', nodeLabel: 'N',
-        measureId: 'm', text: 't', pinned: false, pinNo: undefined, score: null, rank: 1, grades: {},
+        measureId: 'm', text: 't', pinned: false, pinNo: undefined, role: '', reason: '', rank: 1,
       },
       i,
     )

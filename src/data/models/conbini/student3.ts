@@ -43,17 +43,20 @@ export const STUDENT3: ModelStudent = {
     {
       name: 'A 朝のセット',
       role: 'メイン',
+      reason: '既存の商品で始められる〔質疑1〕。通勤客の施策が最優先。2〜3年の時間軸にしても変わらない〔質疑1・2〕',
       body: 'コーヒーと弁当などのセットで、朝ごはんがすぐ揃うようにする。既存の商品で始められる〔質疑1〕。顧客のロイヤリティも高め、来店頻度にも効く〔質疑4〕',
       node: { sheet: 'seg', label: '通勤客（朝に集中）' },
     },
     { name: 'B レジの効率化', body: '朝の時間の制約に応える', node: { sheet: 'seg', label: '通勤客（朝に集中）' } },
     {
       name: 'C 日用品・小容量の拡充',
+      reason: '新たな投資が必要なので中長期の施策〔質疑1〕',
       body: '住民の需要に応える。新たな投資が必要なので中長期の施策〔質疑1〕',
       node: { sheet: 'seg', label: '住民（需要が見えにくい）' },
     },
     {
       name: 'D 八百屋的な生鮮ラインナップ',
+      reason: '2〜3年の時間軸ならスモールスタートで始める〔質疑2〕',
       body: '2〜3年の時間軸ならスモールスタートで始める〔質疑2〕。スーパーから客を引き込み、来店頻度を上げる〔質疑4〕',
       node: { sheet: 'main', label: '来店頻度' },
       ghostNode: { sheet: 'seg', label: '住民（需要が見えにくい）' },
@@ -64,7 +67,7 @@ export const STUDENT3: ModelStudent = {
     { category: '顧客', text: '住民は一日を通して需要が見えにくい' },
     { category: '課題', text: '朝の通勤客は時間の制約と単価の低さ', qa: '質疑1' },
   ],
-  notes: [{ label: '優先順位', text: '通勤客の施策が最優先。2〜3年の時間軸にしても変わらない〔質疑1・2〕。' }],
+  notes: [],
   ghost: {
     premises,
     scale: 'single',

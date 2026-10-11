@@ -1,4 +1,3 @@
-import { GRADE_LABEL, namedAxes } from '../logic/warrant'
 import type { RankedMeasure } from '../logic/warrant'
 import type { ReportPitchCard, ReportState, WarrantState } from '../types'
 
@@ -17,10 +16,12 @@ interface Props {
 
 const TAB_NAMES = ['メイン', 'サブ', 'サブ2']
 
-/** WARRANT の順位で決める（未評価は ？） */
-function rankName(m: RankedMeasure | undefined): string {
-  if (!m || m.score === null || !m.rank) return '？'
-  return TAB_NAMES[m.rank - 1] ?? '？'
+/** WARRANT の メイン/サブ。どれも選んでいなければ OPERATION の順で メイン→サブ */
+function rankName(m: RankedMeasure | undefined, i: number, anyRole: boolean): string {
+  if (!m) return '？'
+  if (m.role === 'main') return 'メイン'
+  if (m.role === 'sub') return 'サブ'
+  return anyRole ? '—' : TAB_NAMES[i] ?? '？'
 }
 
 /** ⅵ 最終報告：施策ごとの1分台本。提出ボタンは常時表示 → RESULT へ。 */
@@ -35,7 +36,8 @@ export function ReportPhase({
   hasScore,
   onOpenResult,
 }: Props) {
-  const axes = namedAxes(warrant)
+  const anyRole = measures.some((m) => m.role)
+  void warrant
   const featuredKeys = new Set(report.cards.map((c) => c.measureKey))
   const active = report.cards[report.activeIndex]
   const activeMeasure = active
@@ -67,7 +69,7 @@ export function ReportPhase({
                     className={`report-tab ${report.activeIndex === i ? 'is-active' : ''}`}
                     onClick={() => onSelectTab(i)}
                   >
-                    {rankName(measures.find((x) => x.key === c.measureKey))}
+                    {rankName(measures.find((x) => x.key === c.measureKey), i, anyRole)}
                   </button>
                   {measures.length > report.cards.length && (
                     <select
@@ -81,7 +83,7 @@ export function ReportPhase({
                         .filter((x) => x.key === c.measureKey || !featuredKeys.has(x.key))
                         .map((x) => (
                           <option key={x.key} value={x.key}>
-                            {x.score === null ? '—' : `${x.rank}位`} {x.text}
+                            {x.role ? `${x.role === 'main' ? 'メイン' : 'サブ'}・` : ''}{x.text}
                           </option>
                         ))}
                     </select>
@@ -94,28 +96,8 @@ export function ReportPhase({
             {active && (
               <article className="report-pitch" role="tabpanel">
                 <header className="report-pitch__head">
-                  <span className="report-pitch__label">
-                    {rankName(activeMeasure)}
-                    {activeMeasure
-                      ? ` · ${activeMeasure.score === null ? '未評価' : `${activeMeasure.rank}位 ${activeMeasure.score}点`}`
-                      : ''}
-                  </span>
-                  {activeMeasure && (
-                    <div className="report-card__grades">
-                      {axes.map((a) => {
-                        const g = activeMeasure.grades[a.id]
-                        return (
-                          <span
-                            key={a.id}
-                            className={`warrant-rank__g warrant-grade--${g ?? 'empty'}`}
-                            title={a.name}
-                          >
-                            {g ? GRADE_LABEL[g] : '・'}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
+                  <span className="report-pitch__label">{rankName(activeMeasure, report.activeIndex, anyRole)}</span>
+                  {activeMeasure?.reason && <span className="report-pitch__why">{activeMeasure.reason}</span>}
                 </header>
 
                 <div className="report-pitch__grid">

@@ -3490,3 +3490,15 @@
 .evidence-card.is-extract { border-radius: 10px; }
 .evidence-card.is-analysis { border-radius: 999px; }
 .plan-card__bullet.is-initial { color: #c62828; font-weight: 800; }
+/* WARRANT：なぜその施策か */
+.why-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.why-row { display: grid; grid-template-columns: 3.2rem minmax(10rem, 22rem) 5rem 1fr; gap: 8px; align-items: start; padding: 6px 8px; background: #f4ecd6; color: #2a2010; border-radius: 3px; border-left: 4px solid #b8a578; }
+.why-row.is-main { border-left-color: #c62828; }
+.why-row__no { font-weight: 800; font-size: 0.8rem; background: #2a2010; color: #f4ecd6; border-radius: 2px; text-align: center; padding: 1px 4px; align-self: start; }
+.why-row__no.is-initial { background: #c62828; }
+.why-row__name { font-size: 0.82rem; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.why-row__role { font-size: 0.8rem; }
+span.why-row__role { font-weight: 800; text-align: center; }
+.why-row__role--main { color: #c62828; }
+.why-row__reason { font-size: 0.82rem; line-height: 1.35; width: 100%; box-sizing: border-box; resize: vertical; min-height: 1.8rem; }
+@media (max-width: 900px) { .why-row { grid-template-columns: 3rem 1fr 5rem; } .why-row__reason { grid-column: 1 / -1; } }

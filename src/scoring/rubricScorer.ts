@@ -2,7 +2,7 @@ import type { IdealAnswer } from '../data/ideals/types'
 import { getIdeal } from '../data/ideals'
 import { getModelStudents } from '../data/models'
 import { buildModelView, type ModelView } from '../logic/modelView'
-import { collectMeasures, isFullyRated, namedAxes, rankMeasures } from '../logic/warrant'
+import { collectMeasures } from '../logic/warrant'
 import { parsePinKey } from '../logic/workspace'
 import type { EvidenceTree, EvidenceWorkspace, IntakeData, ReportState, WarrantState } from '../types'
 import {
@@ -34,7 +34,7 @@ export const NAME: Record<CriterionId, string> = {
   focus: '絞り込みの理由',
   measures: '施策',
   speech: '話し方（結論から）',
-  evaluation: '評価',
+  evaluation: '施策を選んだ理由',
 }
 
 export interface ScoreInput {
@@ -308,20 +308,31 @@ function rawCriteria(input: ScoreInput): CriterionScore[] {
     push('speech', s, fb)
   }
 
-  /* 6 評価 */
+  /* 6 施策を選んだ理由（WARRANT） */
   {
     const w = input.warrant
     let s = 0
-    let fb = '評価軸を2本以上置いて○△✖をつける'
+    let fb = 'メインの施策を決め、選んだ理由を書く'
     if (w) {
-      const axes = namedAxes(w)
       const ms = collectMeasures(input.ws, input.pins)
-      if (axes.length >= 2) s += 2
-      if (axes.length >= 2 && ms.length && ms.every((m) => isFullyRated(w, m.key, axes))) s += 2
-      const top = rankMeasures(w, ms)[0]
-      if (top && input.pitches[0]?.measureKey === top.key) s += 1
-      if (s >= 4) fb = s === 5 ? '評価と発表順が一致している' : '1位の施策から発表する'
-      else if (axes.length >= 2) fb = 'すべての施策を評価する'
+      const main = ms.find((m) => w.roles[m.key] === 'main')
+      const reason = main ? (w.reasons[main.key] ?? '').trim() : ''
+      const tied =
+        /効果|インパクト|Impact|大き|コスト|費用|投資|安く|すぐ|短期|時間|期間|実現|始められ|手軽|ボトルネック|伸びしろ|課題/i.test(reason) ||
+        labels.some((l) => l && reason.includes(l.replace(/[（(].*$/, '')))
+      if (main) s += 2
+      if (reason.length >= 6) s += 1
+      if (tied) s += 1
+      if (main && input.pitches[0]?.measureKey === main.key) s += 1
+      fb = !main
+        ? fb
+        : reason.length < 6
+          ? 'メインを選んだ理由を書く'
+          : !tied
+            ? '理由を効果・実現性・コスト・時間か、狙う箱につなげる'
+            : s === 5
+              ? 'メインと理由がつながっている'
+              : 'メインの施策から発表する'
     }
     push('evaluation', s, fb)
   }

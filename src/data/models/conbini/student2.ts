@@ -46,11 +46,13 @@ export const STUDENT2: ModelStudent = {
     {
       name: 'A 家庭向け商品を前面に出す（最優先）',
       role: 'メイン',
+      reason: 'コストがほぼかからない〔質疑1〕',
       body: 'グループで扱っている生活用品を入口付近やレジ前に置く。コストがほぼかからない〔質疑1〕',
       node: { sheet: 'main', label: '客単価' },
     },
     {
       name: 'B 両方のニーズを1店で満たす',
+      reason: '両方を満たせば差別化になる〔質疑3〕',
       body: 'オフィス寄り・住宅寄りの特化型コンビニが多い中で、両方を満たせば差別化になる。生活用品をクロスセルやセット販売で売る〔質疑3〕',
       node: { sheet: 'main', label: '住宅客の需要（品揃えがオフィス寄り）' },
     },
@@ -64,7 +66,7 @@ export const STUDENT2: ModelStudent = {
       body: '同じ店を繰り返し使うと特典が当たりやすくなる、割引がもらえる仕組みでリピートを作る〔質疑5〕',
       node: { sheet: 'main', label: 'リピート' },
     },
-    { name: 'E 無人レジの導入', body: 'コストと時間がかかるので後回しにする〔質疑1〕', node: { sheet: 'main', label: 'レジの回転率' } },
+    { name: 'E 無人レジの導入', reason: 'コストと時間がかかるので後回しにする〔質疑1〕', body: 'コストと時間がかかるので後回しにする〔質疑1〕', node: { sheet: 'main', label: 'レジの回転率' } },
   ],
   factCards: [
     { category: '数字', text: '年間売上約2億円／日販約55万円' },
@@ -102,7 +104,7 @@ export const STUDENT2: ModelStudent = {
       { sheet: 'main', label: '客単価' },
     ],
     measures: [
-      { name: '無人レジの導入', body: '約1年かかる', node: { sheet: 'main', label: 'レジの回転率' } },
+      { name: '無人レジの導入', reason: '差別化が難しい中で、混んでいない店が選ばれる', body: '約1年かかる', node: { sheet: 'main', label: 'レジの回転率' } },
       { name: '日常生活品を前面に', body: '日常生活品を前面に出して単価を上げる', node: { sheet: 'main', label: '客単価' } },
     ],
     factCards: [

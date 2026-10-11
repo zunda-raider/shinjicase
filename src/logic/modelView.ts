@@ -1,5 +1,6 @@
 import { DEFAULT_METRIC } from '../data/intake'
 import type { FactCard } from '../data/models/factCards'
+import type { WarrantRow } from '../components/WarrantPhase'
 import { classifyModelNode } from '../data/models/types'
 import type { ModelMode, ModelNode, ModelRef, ModelStudent } from '../data/models/types'
 import type { EvidenceTree, EvidenceWorkspace, IntakeData } from '../types'
@@ -66,8 +67,8 @@ export interface ModelView {
   pitches: ModelPitch[]
   /** 最初の5分（GHOST）でも使った施策の ID（OPERATION で番号を赤に） */
   initial: string[]
-  /** 原文に評点があるときだけ */
-  warrant?: { axes: string[]; ratings: Record<string, string[]> }
+  /** WARRANT：施策ごとの 位置づけ・理由（原文が述べているときだけ） */
+  why: WarrantRow[]
 }
 
 function buildTree(
@@ -130,7 +131,7 @@ export function matchInitialMeasures(st: ModelStudent): boolean[] {
 const NOT_EFFECT_RE = /順番|優先順位|最も不確かな前提/
 
 export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
-  const student: ModelStudent = mode === 'GHOST' && base.ghost ? { ...base, ...base.ghost, warrant: undefined } : base
+  const student: ModelStudent = mode === 'GHOST' && base.ghost ? { ...base, ...base.ghost } : base
   const sheetIds: Record<string, string> = {}
   const sheetQa: Record<string, string> = {}
   const nodeQa: Record<string, string> = {}
@@ -177,8 +178,12 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
   const estimates: Record<string, string> = {}
   const initialFlags = mode === 'GHOST' ? student.measures.map(() => true) : matchInitialMeasures(base)
   const initial: string[] = []
+  const why: WarrantRow[] = []
   let pitches: ModelPitch[] = []
-  const premiseLine = premises.map((p) => `${p.label}：${p.value}`).join('／')
+  const premiseLine = [
+    ...premises.map((p) => `${p.label}：${p.value}`),
+    ...notes.filter((n) => n.label === '最も不確かな前提').map((n) => `${n.label}：${n.text}`),
+  ].join('／')
   const goal = premises.find((p) => p.label === 'ゴール')?.value ?? ''
   for (const [mi, m] of student.measures.entries()) {
     const r = resolve(m.node) ?? resolve(m.ghostNode)
@@ -190,6 +195,17 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
     const key = measureKey(r.sheetId, r.nodeId, added.id)
     if (m.estimate) estimates[key] = m.estimate
     if (initialFlags[mi]) initial.push(added.id)
+    {
+      const sh = ws.sheets.find((x) => x.id === r.sheetId)!
+      why.push({
+        key,
+        number: numberTree(sh.tree)[r.nodeId] ?? '',
+        name: m.name.replace(/（最優先）$/, ''),
+        role: m.role === 'メイン' ? 'main' : '',
+        reason: modeText(m.reason ?? '', mode),
+        initial: mode === 'GOD' && initialFlags[mi],
+      })
+    }
     {
       const sheet = ws.sheets.find((s) => s.id === r.sheetId)!
       const no = numberTree(sheet.tree)[r.nodeId]
@@ -232,8 +248,8 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
   return {
     student: base,
     mode,
-    ...(student.warrant ? { warrant: student.warrant } : {}),
     initial,
+    why,
     intake,
     premises,
     ws,

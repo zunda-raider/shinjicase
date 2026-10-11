@@ -1,3 +1,4 @@
+import { createWarrantState, setReason, setRole } from './warrant'
 import { describe, expect, it } from 'vitest'
 import { STUB_INTAKE } from '../data/intake'
 import { addMeasure, exampleWorkspace, pinKey } from './workspace'
@@ -48,13 +49,7 @@ describe('report pitch cards', () => {
 
   it('auto-fills up to 2 cards from ranked measures, preserves edits on same key', () => {
     const { ws, pins } = setup()
-    const measures = reportMeasures(ws, pins, {
-      version: 1,
-      axisSeq: 0,
-      axes: [],
-      ratings: {},
-      finalAnswer: '',
-    })
+    const measures = reportMeasures(ws, pins, createWarrantState())
     let r = ensureDefaultCards(createReportState(), measures, STUB_INTAKE)
     expect(r.cards).toHaveLength(2)
     expect(r.cards[0].premiseTarget).toContain('売上')
@@ -67,13 +62,7 @@ describe('report pitch cards', () => {
 
   it('setFeaturedMeasures caps at 2 and carries over card edits', () => {
     const { ws, pins, keys } = setup()
-    const measures = reportMeasures(ws, pins, {
-      version: 1,
-      axisSeq: 0,
-      axes: [],
-      ratings: {},
-      finalAnswer: '',
-    })
+    const measures = reportMeasures(ws, pins, createWarrantState())
     let r = setFeaturedMeasures(createReportState(), [keys.a, keys.c, keys.b], measures, STUB_INTAKE)
     expect(r.cards.map((c) => c.measureKey)).toEqual([keys.a, keys.c])
     r = updatePitchCard(r, 1, { effect: '法人開拓で新規を増やす' })
@@ -85,13 +74,7 @@ describe('report pitch cards', () => {
 
   it('prunes cards when measures disappear', () => {
     const { ws, pins, keys } = setup()
-    const measures = reportMeasures(ws, pins, {
-      version: 1,
-      axisSeq: 0,
-      axes: [],
-      ratings: {},
-      finalAnswer: '',
-    })
+    const measures = reportMeasures(ws, pins, createWarrantState())
     let r = setFeaturedMeasures(createReportState(), [keys.a, keys.c], measures, STUB_INTAKE)
     const onlyC = measures.filter((m) => m.key === keys.c)
     r = pruneReportCards(r, onlyC)
@@ -102,17 +85,7 @@ describe('report pitch cards', () => {
 describe('score packet + offline', () => {
   it('builds a pitch packet and returns a shaped offline score', () => {
     const { ws, pins, keys } = setup()
-    const warrant = {
-      version: 1 as const,
-      axisSeq: 3,
-      axes: [
-        { id: 'a1', name: '効果' },
-        { id: 'a2', name: '実行しやすさ' },
-        { id: 'a3', name: '期間' },
-      ],
-      ratings: {},
-      finalAnswer: '洗車を優先',
-    }
+    const warrant = setReason(setRole(createWarrantState(), keys.a, 'main'), keys.a, '効果が大きく、すぐ始められる')
     const measures = reportMeasures(ws, pins, warrant)
     let report = setFeaturedMeasures(createReportState(), [keys.a, keys.c], measures, STUB_INTAKE)
     report = updatePitchCard(report, 0, {
@@ -156,9 +129,9 @@ describe('createPitchCard seeds', () => {
         text: '洗車サブスク',
         pinned: true,
         pinNo: 1,
-        score: 6,
+        role: '',
+        reason: '',
         rank: 1,
-        grades: {},
       },
       STUB_INTAKE,
     )
@@ -172,12 +145,12 @@ describe('createPitchCard seeds', () => {
 describe('auto featured', () => {
   it('follows ranking until manual swap', () => {
     const base = [
-      { key: 'a', score: 6, rank: 1 },
-      { key: 'b', score: 4, rank: 2 },
-      { key: 'c', score: 2, rank: 3 },
+      { key: 'a', rank: 1 },
+      { key: 'b', rank: 2 },
+      { key: 'c', rank: 3 },
     ].map((x) => ({
       ...x, sheetId: 's1', sheetName: 'S', nodeId: 'n', number: '1', nodeLabel: 'N',
-      measureId: 'm', text: x.key, pinned: true, pinNo: 1, grades: {},
+      measureId: 'm', text: x.key, pinned: true, pinNo: 1, role: '' as const, reason: '',
     }))
     let r = ensureDefaultCards(createReportState(), base, STUB_INTAKE)
     expect(r.cards.map((c) => c.measureKey)).toEqual(['a', 'b'])

@@ -41,6 +41,8 @@ export interface ModelMeasure {
   initial?: boolean
   /** GHOST でそのノードが無いときの付け先 */
   ghostNode?: ModelRef
+  /** なぜ選んだか（原文が理由を述べているときだけ） */
+  reason?: string
   /** 原文が明示している位置づけ（例 メイン＝最優先） */
   role?: string
 }
@@ -69,8 +71,6 @@ export interface ModelStudent {
   factCards: FactCard[]
   /** 試算・伸ばせる根拠・順番など */
   notes: { label: string; text: string }[]
-  /** 原文に評点がある場合のみ（軸名と、施策名→各軸の記号。空欄は ''） */
-  warrant?: { axes: string[]; ratings: Record<string, string[]> }
   /** GHOST を原文で別に持つ事件（パターン節）。あればこちらを GHOST に使う */
   ghost?: ModelGhost
 }

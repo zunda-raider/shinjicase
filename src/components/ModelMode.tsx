@@ -11,6 +11,7 @@ import { ModeCycle } from './ModeCycle'
 import { PhaseNav, type ViewMode } from './PhaseNav'
 import { PhaseSteps } from './PhaseSteps'
 import { QaText } from './QaText'
+import { WarrantList } from './WarrantPhase'
 import { SheetTabs } from './SheetTabs'
 
 interface Props {
@@ -188,43 +189,8 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
       )}
 
       {phase === 'WARRANT' && (
-        <section className="board model-warrant" aria-label="評価">
-          <div className="board__header">
-            <h2>評価</h2>
-          </div>
-          {view.warrant ? (
-            <table className="warrant-table model-warrant__table">
-              <thead>
-                <tr>
-                  <th>施策</th>
-                  {view.warrant.axes.map((a) => (
-                    <th key={a}>{a}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {view.student.measures.map((m) => (
-                  <tr key={m.name}>
-                    <td>{m.name.replace(/（最優先）$/, '')}</td>
-                    {view.warrant!.axes.map((a, i) => (
-                      <td key={a}>{view.warrant!.ratings[m.name]?.[i] || '—'}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="model-empty">評点：記載なし</p>
-          )}
-          {view.notes.length > 0 && (
-            <ul className="model-bullets">
-              {view.notes.map((n) => (
-                <li key={n.label}>
-                  <b>{n.label}</b> <QaText text={n.text} />
-                </li>
-              ))}
-            </ul>
-          )}
+        <section className="board model-warrant warrant-why" aria-label="なぜその施策か">
+          <WarrantList rows={view.why} readOnly />
         </section>
       )}
 

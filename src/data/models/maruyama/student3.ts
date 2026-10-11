@@ -53,6 +53,7 @@ export const STUDENT3: ModelStudent = {
     },
     {
       name: 'B 集客テナント',
+      reason: '賃料目的ではなく、館全体の客数を増やす手段として入れる〔質疑1〕',
       body: '賃料目的ではなく、館全体の客数を増やす手段として入れる〔質疑1〕',
       node: { sheet: 'main', label: '客数' },
     },

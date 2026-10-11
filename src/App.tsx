@@ -32,14 +32,10 @@ import {
 import { MAX_PINS, createTree, subtreeIds } from './logic/evidenceTree'
 import {
   collectMeasures,
-  isFullyRated,
-  namedAxes,
+  isWarrantDone,
+  setReason,
+  setRole,
   pruneWarrant,
-  addAxis as warrantAddAxis,
-  removeAxis as warrantRemoveAxis,
-  renameAxis as warrantRenameAxis,
-  setFinalAnswer,
-  setRating,
   createWarrantState,
 } from './logic/warrant'
 import {
@@ -190,15 +186,7 @@ export default function App() {
     () => collectMeasures(ws, activePins),
     [ws, activePins],
   )
-  const warrantDone = useMemo(() => {
-    const named = namedAxes(warrantView)
-    return (
-      named.length >= 2 &&
-      named.length === warrantView.axes.length &&
-      warrantMeasures.length > 0 &&
-      warrantMeasures.every((m) => isFullyRated(warrantView, m.key, named))
-    )
-  }, [warrantView, warrantMeasures])
+  const warrantDone = useMemo(() => isWarrantDone(warrantView, warrantMeasures), [warrantView, warrantMeasures])
 
   const reportMeasureList = useMemo(
     () => reportMeasures(ws, activePins, warrantView),
@@ -551,11 +539,8 @@ export default function App() {
           ws={ws}
           pins={activePins}
           warrant={warrantView}
-          onAddAxis={() => setWarrant((prev) => warrantAddAxis(prev))}
-          onRenameAxis={(id, name) => setWarrant((prev) => warrantRenameAxis(prev, id, name))}
-          onRemoveAxis={(id) => setWarrant((prev) => warrantRemoveAxis(prev, id))}
-          onRate={(key, axisId, grade) => setWarrant((prev) => setRating(prev, key, axisId, grade))}
-          onFinalAnswer={(text) => setWarrant((prev) => setFinalAnswer(prev, text))}
+          onRole={(key, role) => setWarrant((prev) => setRole(prev, key, role))}
+          onReason={(key, text) => setWarrant((prev) => setReason(prev, key, text))}
         />
       )}
 

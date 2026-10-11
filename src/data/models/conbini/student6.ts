@@ -53,6 +53,7 @@ export const STUDENT6: ModelStudent = {
   measures: [
     {
       name: 'A 健康食・自炊用食材',
+      reason: 'コンビニの需要がある住民はすでに通っていて、頻度も単価も伸びしろが小さい〔質疑1〕',
       body: '一人が一食で食べきれる量のカット野菜や肉、健康食を置く〔質疑4〕',
       node: { sheet: 'main', label: KEY },
     },
@@ -111,6 +112,7 @@ export const STUDENT6: ModelStudent = {
     measures: [
       {
         name: '健康食・自炊用食材',
+        reason: '「スーパー・ドラッグストアの需要をコンビニで満たす」方を選ぶ（インパクトが大きい）',
         body: '健康食と、カット野菜など一人暮らし向けの自炊用食材を置く',
         node: { sheet: 'main', label: 'スーパー・ドラッグストアの需要をコンビニで満たす' },
       },

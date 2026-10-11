@@ -40,10 +40,25 @@ describe('コンビニ模範', () => {
     expect(JSON.stringify({ ...g, student: null })).not.toContain('〔質疑')
   })
 
-  it('評点は完全解4の GOD のみ（Impact／コスト）', () => {
-    expect(buildModelView(CONBINI_STUDENTS[3], 'GOD').warrant?.axes).toEqual(['Impact', 'コスト'])
-    expect(buildModelView(CONBINI_STUDENTS[3], 'GHOST')).not.toHaveProperty('warrant')
-    for (const i of [0, 1, 2, 4, 5]) expect(buildModelView(CONBINI_STUDENTS[i], 'GOD')).not.toHaveProperty('warrant')
+  it('WARRANT の理由は原文が述べるときだけ（GOD4 は Impact◎・コスト○）', () => {
+    const w4 = buildModelView(CONBINI_STUDENTS[3], 'GOD').why
+    expect(w4[0].role).toBe('main')
+    expect(w4[0].reason.startsWith('Impact◎・コスト○')).toBe(true)
+    expect(w4.filter((r) => r.reason)).toHaveLength(2)
+    for (const st of CONBINI_STUDENTS) for (const r of buildModelView(st, 'GHOST').why) expect(r.reason).not.toContain('〔質疑')
+    expect(buildModelView(CONBINI_STUDENTS[2], 'GOD').why[0].reason).toContain('最優先')
+  })
+
+  it('理由の採点：メインに効果・コスト・時間などの理由があれば満点', () => {
+    const v = buildModelView(CONBINI_STUDENTS[3], 'GOD')
+    const base = scoreInputFromModel('conbini', v)
+    const key = Object.entries(v.ws.sheets[0].measures).flatMap(([nid, l]) => l.map((m) => `${v.ws.sheets[0].id}/${nid}/${m.id}`))
+    const main = key.find((k) => v.why.find((r) => r.key === k)?.role === 'main')!
+    const good = scoreByRubric({ ...base, warrant: { version: 2, roles: { [main]: 'main' }, reasons: { [main]: 'コストが低くすぐ始められ、効果が大きい' }, finalAnswer: '' }, pitches: base.pitches.map((p, i) => ({ ...p, measureKey: i === 0 ? main : undefined })) })
+    const ev = good.criteria.find((c) => c.id === 'evaluation')!
+    expect(ev.score).toBe(ev.max)
+    const none = scoreByRubric({ ...base, warrant: { version: 2, roles: {}, reasons: {}, finalAnswer: '' } })
+    expect(none.criteria.find((c) => c.id === 'evaluation')!.score).toBe(0)
   })
 
   it('最優先の明示がある施策は REPORT のメイン（GOD 2/3/4）', () => {
