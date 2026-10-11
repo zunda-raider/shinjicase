@@ -12,7 +12,7 @@ describe('modelView', () => {
   it('6人分ある（まるやま百貨店のみ）', () => {
     expect(getModelStudents('local-dept')).toHaveLength(6)
     expect(getModelStudents('conbini')).toHaveLength(6)
-    expect(getModelStudents('blue-oasis')).toHaveLength(0)
+    expect(getModelStudents('nocase')).toHaveLength(0)
   })
 
   it('modeText：GHOST は〔質疑〕つきの文を落とす', () => {

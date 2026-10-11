@@ -130,7 +130,7 @@ describe('score packet + offline', () => {
     expect(packet.pitches).toHaveLength(2)
     expect(packet.pitches[0].premiseDefinition).toContain('売上')
     expect(packet.pitches[0].where).toContain('既存顧客')
-    const input = scoreInputFromPlayer({ caseId: 'blue-oasis', intake: STUB_INTAKE, ws, pins, motives: { [pins[0]]: '来店頻度低下が主因である' }, warrant, report })
+    const input = scoreInputFromPlayer({ caseId: 'nocase', intake: STUB_INTAKE, ws, pins, motives: { [pins[0]]: '来店頻度低下が主因である' }, warrant, report })
     const score = scoreByRubric(input)
     expect(score.source).toBe('rule')
     expect(score.total).toBeGreaterThanOrEqual(0)

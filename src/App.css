@@ -3383,7 +3383,7 @@
 .model-empty { opacity: 0.6; }
 .plan-card__text { flex: 1; font-size: 13px; line-height: 1.5; }
 .plan-card__note { display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 4px; background: #333; color: #ffd76a; }
-.evidence-card__qa { position: absolute; right: 4px; bottom: 4px; }
+.evidence-card__qa { position: absolute; right: 3px; top: 3px; line-height: 1; }
 .evidence.is-readonly .evidence-card { cursor: default; }
 .mode-toggle { display: inline-flex; margin-left: 10px; border: 1px solid #8a7a5a; border-radius: 8px; overflow: hidden; }
 .mode-toggle__seg { padding: 7px 14px; font-weight: 700; font-size: 13px; background: transparent; color: #e8dcc0; border: 0; border-right: 1px solid #8a7a5a; cursor: pointer; }

@@ -1,4 +1,4 @@
-import { DEFAULT_CASE_ID, getCase } from '../data/cases'
+import { DEFAULT_CASE_ID, SAMPLE_CASES, getCase } from '../data/cases'
 import { emptyIntake, parseIntake } from '../data/intake'
 import type { IntakeData } from '../types'
 import type { EvidenceWorkspace, ReportState, WarrantState } from '../types'
@@ -67,7 +67,22 @@ export function saveActiveCaseId(caseId: string) {
   }
 }
 
-/** 旧グローバルキーをデフォルト事件の名前空間へ一度だけ移す */
+/** 旧グローバルキー（旧サンプル事件の時代）と、登録から外した事件のキーを消す */
+export function dropStaleKeys() {
+  try {
+    Object.values(LEGACY).forEach((k) => localStorage.removeItem(k))
+    const known = new Set(SAMPLE_CASES.map((c) => c.id))
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i) ?? ''
+      const m = k.match(/^shinjicase\.case\.([^.]+)\./)
+      if (m && !known.has(m[1])) localStorage.removeItem(k)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** 旧グローバルキーを指定事件の名前空間へ一度だけ移す */
 export function migrateLegacyInto(caseId: string) {
   const pairs: [string, string][] = [
     [LEGACY.evidence, caseStorageKey(caseId, 'evidence')],
@@ -86,7 +101,7 @@ export function migrateLegacyInto(caseId: string) {
 }
 
 export function loadCaseWorkspace(caseId: string, metric: string): EvidenceWorkspace {
-  migrateLegacyInto(DEFAULT_CASE_ID)
+  dropStaleKeys()
   try {
     const ws = migrateWorkspace(
       {

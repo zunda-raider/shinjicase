@@ -33,7 +33,7 @@ describe('maruyama ideal rubric', () => {
     expect(r.requiredElements).toHaveLength(5)
     expect(r.acceptedFirstDecompositions).toHaveLength(5)
     expect(r.rejected).toHaveLength(3)
-    expect(getIdeal('blue-oasis')).toBeNull()
+    expect(getIdeal('nocase')).toBeNull()
   })
 
   it('lineage keyword match', () => {
