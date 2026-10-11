@@ -15,16 +15,19 @@ describe('placeFactCards（全事件・全模範）', () => {
           const v = buildModelView(st, mode)
           for (const sheet of v.ws.sheets) {
             const layout = layoutTree(sheet.tree)
-            const pl = placeFactCards(layout, v.factCards)
+            for (const mode of ['below', 'right'] as const) {
+            const pl = placeFactCards(layout, v.factCards, 0, mode)
             const nodes: Rect[] = Object.values(layout.positions).map((p) => ({ x: p.x, y: p.y, w: CARD_W, h: CARD_H }))
             for (const [i, a] of pl.cards.entries()) {
-              expect(a.y).toBeGreaterThanOrEqual(layout.height)
+              if (mode === 'below') expect(a.y).toBeGreaterThanOrEqual(layout.height)
+              else expect(a.x).toBeGreaterThanOrEqual(layout.width)
               for (const b of pl.cards.slice(i + 1)) expect(overlaps(a, b)).toBe(false)
               for (const n of nodes) expect(overlaps(a, n)).toBe(false)
               expect(a.y + a.h).toBeLessThanOrEqual(pl.height)
               expect(a.x + a.w).toBeLessThanOrEqual(pl.width)
             }
             checked++
+            }
           }
         }
       }

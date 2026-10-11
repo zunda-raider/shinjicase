@@ -40,6 +40,23 @@ describe('ノードの種類（分解 / 分析・課題）', () => {
     expect(analysis).toBeGreaterThan(5)
   })
 
+  it('式の項・セグメント（客層・時間帯・カテゴリ）は必ず分解。分析は原因・理由・動機・課題だけ', () => {
+    const TERM = /^(客数|単価|客単価|頻度|朝|昼|夜|通勤客|住民|来店客数|1日の来店客数|購入率|購買率|通過人数|来店割合|商圏人数|当店の選択率|コンビニ選択率|近隣住民数|食事の回数|買上点数|いつもの点数|レジ台数|稼働率|既存顧客|衣料品|食品|化粧品|その他|店頭|外商|ギフト|催事|朝・昼|夕方以降)/
+    // 原文で「X ← Y」と書かれた項は分析（式の項ではない）
+    const ARROW: Record<string, string[]> = { conbini1: ['レジの回転率'], conbini2: ['リピート'], conbini3: ['来店頻度', '1回あたりの点数'] }
+    const list = new Set<string>()
+    for (const c of SAMPLE_CASES)
+      for (const st of getModelStudents(c.id))
+        for (const mode of ['GHOST', 'GOD'] as const)
+          for (const sh of buildModelView(st, mode).ws.sheets)
+            for (const n of Object.values(sh.tree.nodes)) {
+              if (!n.parentId) continue
+              if (TERM.test(n.label) && !(ARROW[`${c.id}${st.no}`] ?? []).includes(n.label)) expect([c.id, st.no, mode, n.label, n.kind]).toEqual([c.id, st.no, mode, n.label, 'split'])
+              if (n.kind === 'analysis') list.add(`${c.id}${st.no} ${n.label}`)
+            }
+    expect([...list].sort()).toMatchSnapshot()
+  })
+
   it('コンビニ GOD 4：要因・ニーズは分析、式の項は分解', () => {
     const t = buildModelView(getModelStudents('conbini')[3], 'GOD').ws.sheets[0].tree
     const k = (l: string) => Object.values(t.nodes).find((x) => x.label.startsWith(l))!.kind

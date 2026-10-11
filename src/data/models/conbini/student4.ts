@@ -25,8 +25,8 @@ export const STUDENT4: ModelStudent = {
                 op: 'add',
                 qa: '質疑5',
                 children: [
-                  node('必需品のニーズ（水・食べ物・傘・タバコ）', { qa: '質疑5' }),
-                  node('好奇心（店外から見える仕掛け）', { qa: '質疑6' }),
+                  node('必需品のニーズ（水・食べ物・傘・タバコ）', { kind: 'analysis', qa: '質疑5' }),
+                  node('好奇心（店外から見える仕掛け）', { kind: 'analysis', qa: '質疑6' }),
                 ],
               }),
               node('外部の要因（天候）', { qa: '質疑4' }),

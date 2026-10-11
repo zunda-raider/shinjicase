@@ -495,3 +495,23 @@ export function isEvidenceTree(v: unknown): v is EvidenceTree {
       n.children.every((c) => typeof c === 'string' && nodes[c]?.parentId === n.id),
   )
 }
+
+/**
+ * ラベルでノードを探す。「親/子」のようにスラッシュで祖先をつなぐと、同名ノード（朝・昼・夜など）を区別できる。
+ * 表示ラベルには親を書かず、見分けはここ（参照側）で行う。
+ */
+export function findNodeByPath(tree: EvidenceTree, path: string, opts: { skipRoot?: boolean } = {}): EvidenceNodeId | null {
+  const parts = path.split('/').map((x) => x.trim())
+  const last = parts[parts.length - 1]
+  for (const n of Object.values(tree.nodes)) {
+    if (n.label !== last || (opts.skipRoot && !n.parentId)) continue
+    let p = n.parentId ? tree.nodes[n.parentId] : undefined
+    let ok = true
+    for (let i = parts.length - 2; i >= 0; i--) {
+      if (!p || p.label !== parts[i]) { ok = false; break }
+      p = p.parentId ? tree.nodes[p.parentId] : undefined
+    }
+    if (ok) return n.id
+  }
+  return null
+}

@@ -3,7 +3,7 @@ import type { FactCard } from '../data/models/factCards'
 import { classifyModelNode } from '../data/models/types'
 import type { ModelMode, ModelNode, ModelRef, ModelStudent } from '../data/models/types'
 import type { EvidenceTree, EvidenceWorkspace, IntakeData } from '../types'
-import { createTree, decompose, numberTree, setNodeKind } from './evidenceTree'
+import { createTree, decompose, findNodeByPath, numberTree, setNodeKind } from './evidenceTree'
 import { measureKey } from './warrant'
 import { addMeasure, newSheet, pinKey } from './workspace'
 import { MAX_PINS } from './evidenceTree'
@@ -116,8 +116,8 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
     if (!ref) return null
     const sid = sheetIds[ref.sheet]
     const sheet = ws.sheets.find((s) => s.id === sid)
-    const node = sheet && Object.values(sheet.tree.nodes).find((n) => n.label === ref.label && n.parentId)
-    return sheet && node ? { sheetId: sheet.id, nodeId: node.id } : null
+    const nodeId = sheet && findNodeByPath(sheet.tree, ref.label, { skipRoot: true })
+    return sheet && nodeId ? { sheetId: sheet.id, nodeId } : null
   }
 
   const pins: string[] = []

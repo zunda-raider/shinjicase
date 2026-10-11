@@ -34,7 +34,7 @@ export const STUDENT6: ModelStudent = {
                     kind: 'analysis',
                     op: 'add',
                     children: [
-                      node('取り込む相手：単身・共働き世帯', { qa: '質疑5・6' }),
+                      node('取り込む相手：単身・共働き世帯', { kind: 'analysis', qa: '質疑5・6' }),
                       node('選ばれる理由：一人分の量・手軽さ', { qa: '質疑4・6' }),
                     ],
                   }),
@@ -94,8 +94,8 @@ export const STUDENT6: ModelStudent = {
                 node('コンビニ選択率', {
                   op: 'add',
                   children: [
-                    node('コンビニの需要をより満たす', { kind: 'analysis' }),
-                    node('スーパー・ドラッグストアの需要をコンビニで満たす', { kind: 'analysis' }),
+                    node('コンビニの需要をより満たす'),
+                    node('スーパー・ドラッグストアの需要をコンビニで満たす'),
                   ],
                 }),
               ],

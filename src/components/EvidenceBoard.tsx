@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   CARD_H,
@@ -25,7 +25,8 @@ import {
 import type { EvidenceNodeId, EvidenceTree, LinkKind } from '../types'
 import { TreeThreads } from './TreeThreads'
 import { NodeLabel } from './NodeLabel'
-import { placeFactCards } from '../logic/boardNotes'
+import { placeFactCardsFit } from '../logic/boardNotes'
+import { fitScale, useFitBox } from './useFit'
 import { FACT_CATEGORIES, type FactCard } from '../data/models/factCards'
 
 export type BoardMode = 'decompose' | 'suspect'
@@ -79,7 +80,10 @@ export function EvidenceBoard({
   const [editingId, setEditingId] = useState<EvidenceNodeId | null>(null)
 
   const layout = useMemo(() => layoutTree(tree), [tree])
-  const placement = placeFactCards(layout, factCards ?? [], motives ? 26 : 0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const box = useFitBox(scrollRef)
+  const placement = placeFactCardsFit(layout, factCards ?? [], motives ? 26 : 0, box)
+  const scale = fitScale(box, placement.width, placement.height)
   const numbers = useMemo(() => numberTree(tree), [tree])
   const nodes = Object.values(tree.nodes)
   const isDecompose = !readOnly && mode === 'decompose'
@@ -196,10 +200,16 @@ export function EvidenceBoard({
 
       {tabs}
 
-      <div className="evidence__scroll">
+      <div
+        ref={scrollRef}
+        className="evidence__scroll is-fit"
+        style={{ height: Math.min(box.h, Math.ceil(placement.height * scale) + 4) }}
+        data-scale={scale.toFixed(2)}
+      >
+        <div className="evidence__fit" style={{ width: placement.width * scale, height: placement.height * scale }}>
         <div
           className="evidence__area"
-          style={{ width: placement.width, height: placement.height }}
+          style={{ width: placement.width, height: placement.height, transform: `scale(${scale})`, transformOrigin: '0 0' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedId(null)
           }}
@@ -218,7 +228,7 @@ export function EvidenceBoard({
           ))}
         <div
           className="evidence__canvas"
-          style={{ position: 'absolute', left: (placement.width - layout.width) / 2, top: 0, margin: 0, width: layout.width, height: layout.height + (motives ? 26 : 0) }}
+          style={{ position: 'absolute', left: placement.treeX, top: 0, margin: 0, width: layout.width, height: layout.height + (motives ? 26 : 0) }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedId(null)
           }}
@@ -450,6 +460,7 @@ export function EvidenceBoard({
               </button>
             )
           })}
+        </div>
         </div>
         </div>
       </div>

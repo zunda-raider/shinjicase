@@ -31,7 +31,7 @@ export const STUDENT2: ModelStudent = {
           node('客単価', {
             op: 'add',
             splitQa: '質疑2',
-            children: leaves('住宅客の需要（品揃えがオフィス寄り）'),
+            children: [node('住宅客の需要（品揃えがオフィス寄り）', { kind: 'analysis' })],
           }),
         ],
       }),

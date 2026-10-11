@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import type React from 'react'
+import { fitScale, useFitBox } from './useFit'
 import {
   LINK_SYMBOL,
   TREE_SIZE_OPERATION,
@@ -44,6 +45,8 @@ export function OperationPhase({
   const layout = useMemo(() => layoutTree(tree, TREE_SIZE_OPERATION), [tree])
   const [zoom, setZoom] = useState(1)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const fitBox = useFitBox(scrollRef)
+  const eff = +(fitScale(fitBox, layout.width, layout.height) * zoom).toFixed(3)
   const drag = useRef<{ x: number; y: number; sl: number; st: number; moved: boolean; id: number } | null>(null)
   const suppressClick = useRef(false)
   const [panning, setPanning] = useState(false)
@@ -150,7 +153,7 @@ export function OperationPhase({
   }
 
   return (
-    <div className="operation operation--compact">
+    <div className="operation operation--compact" style={{ gridTemplateColumns: `minmax(260px, ${Math.min(Math.max(460, layout.width + 28), 760)}px) minmax(420px, 1fr)` }}>
       <section className="board operation__tree" aria-label="選んだツリー">
         <div className="board__header operation__tree-header">
           <h2>容疑者ツリー</h2>
@@ -168,7 +171,7 @@ export function OperationPhase({
         </div>
         <div className="operation__zoom" role="group" aria-label="ツリーの拡大縮小">
           <button type="button" className="btn btn--ghost" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))} aria-label="縮小">－</button>
-          <span className="operation__zoom-val">{Math.round(zoom * 100)}%</span>
+          <span className="operation__zoom-val">{Math.round(eff * 100)}%</span>
           <button type="button" className="btn btn--ghost" onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))} aria-label="拡大">＋</button>
           <button
             type="button"
@@ -185,16 +188,18 @@ export function OperationPhase({
         <div
           ref={scrollRef}
           className={`evidence__scroll operation__scroll is-pannable ${panning ? 'is-panning' : ''}`}
+          style={{ height: Math.min(fitBox.h, Math.ceil(layout.height * eff) + 4) }}
+          data-scale={eff.toFixed(2)}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onClickCapture={onClickCapture}
         >
-          <div className="operation__zoom-box" style={{ width: layout.width * zoom, height: layout.height * zoom }}>
+          <div className="operation__zoom-box" style={{ width: layout.width * eff, height: layout.height * eff, margin: '0 auto' }}>
           <div
             className="evidence__canvas"
-            style={{ width: layout.width, height: layout.height, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
+            style={{ width: layout.width, height: layout.height, transform: `scale(${eff})`, transformOrigin: '0 0' }}
           >
             <TreeThreads tree={tree} layout={layout} size={size} />
             {Object.values(tree.nodes).map((n) => {

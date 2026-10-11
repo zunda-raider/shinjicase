@@ -8,18 +8,18 @@ const seg = (morningExtra = false) =>
         op: 'add',
         children: [
           morningExtra
-            ? node('朝（通勤客）', {
+            ? node('朝', {
                 op: 'mul',
                 children: [
                   node('レジの回転率', { kind: 'analysis', op: 'mul', qa: '質疑2', children: leaves('レジ台数', '稼働率') }),
                 ],
               })
-            : node('朝（通勤客）'),
-          node('昼（通勤客）'),
-          node('夜（通勤客）'),
+            : node('朝'),
+          node('昼'),
+          node('夜'),
         ],
       }),
-      node('住民', { op: 'add', children: leaves('朝（住民）', '昼（住民）', '夜（住民）') }),
+      node('住民', { op: 'add', children: leaves('朝', '昼', '夜') }),
     ],
   })
 
@@ -44,7 +44,7 @@ export const STUDENT1: ModelStudent = {
   ],
   focus: '最も解くべき課題：朝のピーク時の客数に対して単価が低いこと。それを支える回転率〔質疑3〕',
   pins: [
-    { sheet: 'seg', label: '朝（通勤客）' },
+    { sheet: 'seg', label: '通勤客/朝' },
     { sheet: 'main', label: '単価' },
     { sheet: 'seg', label: 'レジの回転率' },
   ],
@@ -52,12 +52,12 @@ export const STUDENT1: ModelStudent = {
     {
       name: 'A 朝食とコーヒーのセット特典',
       body: '1,000円以上の購入でコーヒーL無料。コーヒーの原価は1杯20円程度なので、単価の上昇で回収できる〔質疑1〕',
-      node: { sheet: 'seg', label: '朝（通勤客）' },
+      node: { sheet: 'seg', label: '通勤客/朝' },
     },
     {
       name: 'B もう1品をレジ前に',
       body: 'ホットスナックの声かけ、夏はスポーツドリンクを店頭に、冷感シートをレジ前に〔質疑1〕',
-      node: { sheet: 'seg', label: '朝（通勤客）' },
+      node: { sheet: 'seg', label: '通勤客/朝' },
     },
     {
       name: 'C 回転率の確保',
@@ -67,7 +67,7 @@ export const STUDENT1: ModelStudent = {
     {
       name: 'D 競合への差別化',
       body: '他のコンビニには、コーヒー特典と商品配置（お酒の近くにおつまみ、タバコの近くにライター、右回りの導線）で差をつける。カフェには、コーヒーとパンなどの朝食を一緒に選べる強みで対抗する〔質疑4〕',
-      node: { sheet: 'seg', label: '朝（通勤客）' },
+      node: { sheet: 'seg', label: '通勤客/朝' },
     },
     { name: 'E 夜のセット特典', body: '1,200円以上の購入でデザート1品無料〔質疑5〕', node: { sheet: 'main', label: '単価' } },
     { name: 'F アレンジレシピの掲示', body: '例：チャーハン×チーズ。まとめ買いを促す〔質疑5〕', node: { sheet: 'main', label: '単価' } },
@@ -105,14 +105,14 @@ export const STUDENT1: ModelStudent = {
     ],
     focus: '朝の通勤客。客数は最も多いのに、朝食だけ、コーヒー1杯だけで単価が低い',
     pins: [
-      { sheet: 'seg', label: '朝（通勤客）' },
+      { sheet: 'seg', label: '通勤客/朝' },
       { sheet: 'main', label: '単価' },
     ],
     measures: [
       {
         name: 'コーヒーLサイズ無料',
         body: '朝に1,000円以上買うとコーヒーLサイズ無料（まとめ買いで単価を上げ、差別化にもなる）',
-        node: { sheet: 'seg', label: '朝（通勤客）' },
+        node: { sheet: 'seg', label: '通勤客/朝' },
       },
     ],
     factCards: [

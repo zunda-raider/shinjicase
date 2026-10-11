@@ -5,7 +5,7 @@ import type {
   IntakeData,
   LinkKind,
 } from '../types'
-import { ROOT_ID, createTree, decompose } from '../logic/evidenceTree'
+import { ROOT_ID, createTree, decompose, findNodeByPath } from '../logic/evidenceTree'
 import { addMeasure, newSheet, pinKey } from '../logic/workspace'
 
 /** プレイ可能なサンプル事件 */
@@ -25,10 +25,7 @@ export interface SampleCase {
 }
 
 function findLabel(tree: EvidenceTree, label: string): EvidenceNodeId | null {
-  for (const n of Object.values(tree.nodes)) {
-    if (n.label === label) return n.id
-  }
-  return null
+  return findNodeByPath(tree, label)
 }
 
 function split(
@@ -104,15 +101,15 @@ function buildConbiniExample(): EvidenceWorkspace {
   t1 = split(t1, ROOT_ID, 'mul', ['客数', '単価', '頻度'])
   let t2 = createTree('売上')
   t2 = split(t2, ROOT_ID, 'add', ['通勤客', '住民'])
-  t2 = split(t2, '通勤客', 'add', ['朝（通勤客）', '昼（通勤客）', '夜（通勤客）'])
-  t2 = split(t2, '住民', 'add', ['朝（住民）', '昼（住民）', '夜（住民）'])
+  t2 = split(t2, '通勤客', 'add', ['朝', '昼', '夜'])
+  t2 = split(t2, '住民', 'add', ['朝', '昼', '夜'])
   let ws: EvidenceWorkspace = {
     version: 4,
     seq: 2,
     activeSheetId: 's1',
     sheets: [sheet('s1', '客数×単価×頻度', t1), sheet('s2', '客層×時間帯', t2)],
   }
-  const morning = findLabel(ws.sheets[1].tree, '朝（通勤客）')!
+  const morning = findLabel(ws.sheets[1].tree, '通勤客/朝')!
   ws = addMeasure(ws, 's2', morning, '朝に1,000円以上買うとコーヒーLサイズ無料').ws
   return ws
 }
@@ -134,7 +131,7 @@ const CONBINI: SampleCase = {
   },
   buildExample: buildConbiniExample,
   sampleSuspects: [
-    { sheetId: 's2', nodeLabel: '朝（通勤客）', motive: '客数は最も多いのに、朝食だけ・コーヒー1杯だけで単価が低い' },
+    { sheetId: 's2', nodeLabel: '通勤客/朝', motive: '客数は最も多いのに、朝食だけ・コーヒー1杯だけで単価が低い' },
   ],
 }
 

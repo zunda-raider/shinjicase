@@ -31,7 +31,7 @@ export const STUDENT3: ModelStudent = {
     {
       key: 'seg',
       name: '客層別',
-      tree: node('売上', { op: 'add', children: [node('通勤客（朝に集中）', { kind: 'analysis' }), node('住民（需要が見えにくい）', { kind: 'analysis' })] }),
+      tree: node('売上', { op: 'add', children: leaves('通勤客（朝に集中）', '住民（需要が見えにくい）') }),
     },
   ],
   focus: '最も解くべき課題：朝の通勤客の時間の制約と単価の低さ〔質疑1〕',
@@ -74,7 +74,7 @@ export const STUDENT3: ModelStudent = {
       {
         key: 'seg',
         name: '客層別',
-        tree: node('売上', { op: 'add', children: [node('通勤客（朝の朝食需要）', { kind: 'analysis' }), node('住民（朝昼夜まんべんなく）', { kind: 'analysis' })] }),
+        tree: node('売上', { op: 'add', children: leaves('通勤客（朝の朝食需要）', '住民（朝昼夜まんべんなく）') }),
       },
     ],
     focus: '朝の通勤客の時間の制約と単価の低さ、住民需要を取り込めていないこと',

@@ -608,7 +608,6 @@
     0 0 0 3px #c62828,
     0 0 0 7px rgba(198, 40, 40, 0.35),
     3px 4px 8px rgba(0, 0, 0, 0.4);
-  border-radius: 46% / 50%;
   background: linear-gradient(165deg, #fff1c0 0%, #f0c860 100%);
   z-index: 3;
 }
@@ -1147,9 +1146,7 @@
   gap: 0.1rem;
 }
 
-.operation--compact .operation-node.is-pinned {
-  border-radius: 3px;
-}
+
 
 .operation--compact .operation-node .evidence-card__label {
   font-size: 0.68rem;
@@ -3488,3 +3485,5 @@
 .evidence-card:hover .evidence-card__kind,
 .evidence-card.is-selected .evidence-card__kind { opacity: 1; pointer-events: auto; }
 .evidence-card__kind:hover { background: rgba(0, 0, 0, 0.15); }
+.evidence__scroll.is-fit, .operation__scroll { max-height: none; min-height: 0; }
+.evidence__fit { position: relative; margin: 0 auto; }
