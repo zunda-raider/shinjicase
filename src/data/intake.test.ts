@@ -8,10 +8,10 @@ import {
   percentFromMultiplier,
   STUB_INTAKE,
 } from './intake'
-import { buildScorePacket, createPitchCard } from '../logic/report'
+import { buildScorePacket, createPitchCard, createReportScript } from '../logic/report'
 import { createWorkspace } from '../logic/workspace'
 import { createWarrantState } from '../logic/warrant'
-import { createReportState } from '../logic/report'
+import { createSummaryState } from '../logic/summary'
 
 describe('player intake', () => {
   it('converts percent ↔ multiplier', () => {
@@ -68,7 +68,8 @@ describe('player intake', () => {
       pins: [],
       motives: {},
       warrant: createWarrantState(),
-      report: createReportState(),
+      summary: createSummaryState(),
+      script: createReportScript(),
     })
     expect(packet.intake.premises).toHaveLength(3)
   })

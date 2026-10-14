@@ -24,7 +24,7 @@ describe('コンビニ模範', () => {
     ws = addMeasure(ws, 's1', 'n1', '多店舗展開する').ws
     const bad: ScoreInput = {
       caseId: 'conbini', premises: [], numericTarget: false, years: 0, ws, pins: [], motives: {}, warrant: null,
-      pitches: [{ premise: '', current: '', goal: '', where: '多店舗展開', effect: '' }], finalAnswer: '',
+      pitches: [{ premise: '', current: '', goal: '', where: '多店舗展開', effect: '' }], script: '', finalAnswer: '',
     }
     const r = scoreByRubric(bad)
     expect(r.total).toBeLessThan(40)

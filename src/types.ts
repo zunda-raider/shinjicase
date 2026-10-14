@@ -25,6 +25,7 @@ export type Phase =
   | 'EVIDENCE'
   | 'OPERATION'
   | 'WARRANT'
+  | 'SUMMARY'
   | 'REPORT'
   | 'RESULT'
 
@@ -200,35 +201,38 @@ export interface WarrantState {
 }
 
 /* ------------------------------------------------------------------ */
-/* ⅵ REPORT（最終報告 = 施策ごとの1分台本タブ）                         */
+/* ⅵ SUMMARY（施策ごとの要点タブ）                                     */
 /* ------------------------------------------------------------------ */
 
-/** 施策1つ分の1分台本。タブ1枚 = このカード1枚。 */
-export interface ReportPitchCard {
+/** 施策1つ分の要点。タブ1枚 = このカード1枚。 */
+export interface SummaryPitchCard {
   /** WarrantMeasure.key */
   measureKey: string
-  /** 前提：言葉の定義（INTAKE から仮置き） */
   premiseDefinition: string
-  /** 前提：依頼人 */
   premiseClient: string
-  /** 前提：目標 */
   premiseTarget: string
-  /** 現状 */
   current: string
-  /** 最終ゴール */
   goal: string
-  /** 施策：ツリーのどこに効くか */
   where: string
-  /** 効果 */
   effect: string
 }
 
-export interface ReportState {
+export interface SummaryState {
   version: 3
-  /** 発表する施策カード（最大2）。順序 = タブ順 */
-  cards: ReportPitchCard[]
-  /** 表示中タブ */
+  cards: SummaryPitchCard[]
   activeIndex: number
   /** true = ユーザーがタブの施策を入れ替えた（自動選択しない） */
+  manual?: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* ⅶ REPORT（1分発表の地続き台本）                                     */
+/* ------------------------------------------------------------------ */
+
+export interface ReportScriptState {
+  version: 1
+  text: string
+  /** SUMMARY カードから自動下書きしたときの指紋。manual でないとき SUMMARY 変更で再生成 */
+  from?: string
   manual?: boolean
 }

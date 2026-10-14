@@ -5,22 +5,26 @@ import { addMeasure, exampleWorkspace, pinKey } from './workspace'
 import {
   buildScorePacket,
   createPitchCard,
-  createReportState,
+  createReportScript,
+  draftReportScript,
+  ensureReportScript,
+  setReportScriptText,
+} from './report'
+import {
+  createSummaryState,
   ensureDefaultCards,
-  isReportState,
-  loadReportState,
-  pruneReportCards,
-  reportMeasures,
+  isSummaryState,
+  loadSummaryState,
+  pruneSummaryCards,
+  summaryMeasures,
   setFeaturedMeasures,
   updatePitchCard,
-} from './report'
-import type { EvidenceWorkspace } from '../types'
+} from './summary'
 import { scoreByRubric, scoreInputFromPlayer } from '../scoring/rubricScorer'
+import type { EvidenceWorkspace } from '../types'
 
 function nid(ws: EvidenceWorkspace, sheetId: string, label: string) {
-  return Object.values(ws.sheets.find((s) => s.id === sheetId)!.tree.nodes).find(
-    (n) => n.label === label,
-  )!.id
+  return Object.values(ws.sheets.find((s) => s.id === sheetId)!.tree.nodes).find((n) => n.label === label)!.id
 }
 
 function setup() {
@@ -39,18 +43,18 @@ function setup() {
 
 describe('report pitch cards', () => {
   it('creates empty v3 state and validates', () => {
-    const r = createReportState()
+    const r = createSummaryState()
     expect(r.version).toBe(3)
     expect(r.cards).toEqual([])
-    expect(isReportState(r)).toBe(true)
-    expect(isReportState({ version: 2, cards: [] })).toBe(false)
-    expect(loadReportState(null).cards).toEqual([])
+    expect(isSummaryState(r)).toBe(true)
+    expect(isSummaryState({ version: 2, cards: [] })).toBe(false)
+    expect(loadSummaryState(null).cards).toEqual([])
   })
 
   it('auto-fills up to 2 cards from ranked measures, preserves edits on same key', () => {
     const { ws, pins } = setup()
-    const measures = reportMeasures(ws, pins, createWarrantState())
-    let r = ensureDefaultCards(createReportState(), measures, STUB_INTAKE)
+    const measures = summaryMeasures(ws, pins, createWarrantState())
+    let r = ensureDefaultCards(createSummaryState(), measures, STUB_INTAKE)
     expect(r.cards).toHaveLength(2)
     expect(r.cards[0].premiseTarget).toContain('売上')
     expect(r.cards[0].where).toContain('既存顧客')
@@ -62,8 +66,8 @@ describe('report pitch cards', () => {
 
   it('setFeaturedMeasures caps at 2 and carries over card edits', () => {
     const { ws, pins, keys } = setup()
-    const measures = reportMeasures(ws, pins, createWarrantState())
-    let r = setFeaturedMeasures(createReportState(), [keys.a, keys.c, keys.b], measures, STUB_INTAKE)
+    const measures = summaryMeasures(ws, pins, createWarrantState())
+    let r = setFeaturedMeasures(createSummaryState(), [keys.a, keys.c, keys.b], measures, STUB_INTAKE)
     expect(r.cards.map((c) => c.measureKey)).toEqual([keys.a, keys.c])
     r = updatePitchCard(r, 1, { effect: '法人開拓で新規を増やす' })
     r = setFeaturedMeasures(r, [keys.c, keys.b], measures, STUB_INTAKE)
@@ -74,10 +78,10 @@ describe('report pitch cards', () => {
 
   it('prunes cards when measures disappear', () => {
     const { ws, pins, keys } = setup()
-    const measures = reportMeasures(ws, pins, createWarrantState())
-    let r = setFeaturedMeasures(createReportState(), [keys.a, keys.c], measures, STUB_INTAKE)
+    const measures = summaryMeasures(ws, pins, createWarrantState())
+    let r = setFeaturedMeasures(createSummaryState(), [keys.a, keys.c], measures, STUB_INTAKE)
     const onlyC = measures.filter((m) => m.key === keys.c)
-    r = pruneReportCards(r, onlyC)
+    r = pruneSummaryCards(r, onlyC)
     expect(r.cards.map((c) => c.measureKey)).toEqual([keys.c])
   })
 })
@@ -86,24 +90,26 @@ describe('score packet + offline', () => {
   it('builds a pitch packet and returns a shaped offline score', () => {
     const { ws, pins, keys } = setup()
     const warrant = setReason(setRole(createWarrantState(), keys.a, 'main'), keys.a, '効果が大きく、すぐ始められる')
-    const measures = reportMeasures(ws, pins, warrant)
-    let report = setFeaturedMeasures(createReportState(), [keys.a, keys.c], measures, STUB_INTAKE)
+    const measures = summaryMeasures(ws, pins, warrant)
+    let report = setFeaturedMeasures(createSummaryState(), [keys.a, keys.c], measures, STUB_INTAKE)
     report = updatePitchCard(report, 0, {
       current: '既存顧客の来店頻度が落ちている。',
       effect: '洗車サブスクで来店回数を戻す。',
     })
+    const script = ensureReportScript(createReportScript(), report.cards, STUB_INTAKE)
     const packet = buildScorePacket({
       intake: STUB_INTAKE,
       ws,
       pins,
       motives: { [pins[0]]: '来店頻度低下が主因である' },
       warrant,
-      report,
+      summary: report,
+      script,
     })
     expect(packet.pitches).toHaveLength(2)
     expect(packet.pitches[0].premiseDefinition).toContain('売上')
     expect(packet.pitches[0].where).toContain('既存顧客')
-    const input = scoreInputFromPlayer({ caseId: 'nocase', intake: STUB_INTAKE, ws, pins, motives: { [pins[0]]: '来店頻度低下が主因である' }, warrant, report })
+    const input = scoreInputFromPlayer({ caseId: 'nocase', intake: STUB_INTAKE, ws, pins, motives: { [pins[0]]: '来店頻度低下が主因である' }, warrant, summary: report, script })
     const score = scoreByRubric(input)
     expect(score.source).toBe('rule')
     expect(score.total).toBeGreaterThanOrEqual(0)
@@ -152,12 +158,40 @@ describe('auto featured', () => {
       ...x, sheetId: 's1', sheetName: 'S', nodeId: 'n', number: '1', nodeLabel: 'N',
       measureId: 'm', text: x.key, pinned: true, pinNo: 1, role: '' as const, reason: '',
     }))
-    let r = ensureDefaultCards(createReportState(), base, STUB_INTAKE)
+    let r = ensureDefaultCards(createSummaryState(), base, STUB_INTAKE)
     expect(r.cards.map((c) => c.measureKey)).toEqual(['a', 'b'])
     const reordered = [base[2], base[0], base[1]]
     r = ensureDefaultCards(r, reordered, STUB_INTAKE)
     expect(r.cards.map((c) => c.measureKey)).toEqual(['c', 'a'])
     r = { ...r, manual: true }
     expect(ensureDefaultCards(r, base, STUB_INTAKE).cards.map((c) => c.measureKey)).toEqual(['c', 'a'])
+  })
+})
+
+
+describe('REPORT script', () => {
+  it('drafts prose from SUMMARY cards and locks after manual edit', () => {
+    const cards = [
+      {
+        measureKey: 'a',
+        premiseDefinition: '売上＝来店×単価',
+        premiseClient: '店長',
+        premiseTarget: '売上 ×1.2／3年',
+        current: '朝の単価が低い',
+        goal: '売上 ×1.2／3年',
+        where: '1-1 朝',
+        effect: 'コーヒー無料で単価を上げる',
+      },
+    ]
+    const text = draftReportScript(cards, STUB_INTAKE)
+    expect(text).toContain('本日は')
+    expect(text).toContain('朝の単価が低い')
+    expect(text).toContain('コーヒー無料')
+    let script = ensureReportScript(createReportScript(), cards, STUB_INTAKE)
+    expect(script.text).toBe(text)
+    script = setReportScriptText(script, '手で直した台本です。', cards)
+    expect(script.manual).toBe(true)
+    const changed = [{ ...cards[0], current: '別の現状' }]
+    expect(ensureReportScript(script, changed, STUB_INTAKE).text).toBe('手で直した台本です。')
   })
 })

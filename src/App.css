@@ -3502,3 +3502,47 @@ span.why-row__role { font-weight: 800; text-align: center; }
 .why-row__role--main { color: #c62828; }
 .why-row__reason { font-size: 0.82rem; line-height: 1.35; width: 100%; box-sizing: border-box; resize: vertical; min-height: 1.8rem; }
 @media (max-width: 900px) { .why-row { grid-template-columns: 3rem 1fr 5rem; } .why-row__reason { grid-column: 1 / -1; } }
+
+/* TITLE へ戻る（フェーズタブ横） */
+.phase-nav__title {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border: 1px solid #8a7a55;
+  background: #2a2418;
+  color: #e8d9a8;
+  border-radius: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.phase-nav__title:hover { background: #3a3220; color: #fff3c8; }
+
+/* REPORT 通し台本 */
+.report-prose { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.report-prose__ta {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 22rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  padding: 14px 16px;
+  background: #f4ecd6;
+  color: #2a2010;
+  border: 1px solid #b8a578;
+  border-radius: 3px;
+  resize: vertical;
+  font-family: inherit;
+}
+.report-prose__body {
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  padding: 14px 16px;
+  background: #f4ecd6;
+  color: #2a2010;
+  border: 1px solid #b8a578;
+  border-radius: 3px;
+  min-height: 16rem;
+}

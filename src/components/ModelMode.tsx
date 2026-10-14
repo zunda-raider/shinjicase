@@ -12,19 +12,22 @@ import { PhaseNav, type ViewMode } from './PhaseNav'
 import { PhaseSteps } from './PhaseSteps'
 import { QaText } from './QaText'
 import { WarrantList } from './WarrantPhase'
+import { ReportPhase } from './ReportPhase'
 import { SheetTabs } from './SheetTabs'
+import { draftReportScript } from '../logic/report'
 
 interface Props {
   caseId: string
   mode: Mode
   initialPhase?: Phase
   initialStudent?: number
+  onTitle: () => void
   onViewMode: (m: ViewMode, phase: Phase) => void
 }
 
 
 /** GHOST MODE / GOD MODE：優秀な生徒の回答をいつもの画面で閲覧（編集不可・保存なし） */
-export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMode }: Props) {
+export function ModelMode({ caseId, mode, initialPhase, initialStudent, onTitle, onViewMode }: Props) {
   const students = getModelStudents(caseId)
   const [idx, setIdx] = useState(Math.max(0, (initialStudent ?? 1) - 1))
   const [phase, setPhase] = useState<Phase>(
@@ -65,6 +68,19 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
   }
   const pitch = view.pitches[Math.min(pitchIdx, view.pitches.length - 1)]
   const go = (p: Phase) => setPhase(p === 'RESULT' ? 'REPORT' : p)
+  const scriptText = draftReportScript(
+    view.pitches.map((p) => ({
+      measureKey: p.title,
+      premiseDefinition: p.premise,
+      premiseClient: '',
+      premiseTarget: '',
+      current: p.current,
+      goal: p.goal,
+      where: p.where,
+      effect: p.effect,
+    })),
+    view.intake,
+  )
 
   return (
     <div className={`app model-mode model-mode--${mode.toLowerCase()}`} data-testid="model-mode">
@@ -110,6 +126,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
       <PhaseNav
         active={phase}
         onSelect={go}
+        onTitle={onTitle}
         readOnly
       />
 
@@ -194,8 +211,8 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
         </section>
       )}
 
-      {phase === 'REPORT' && (
-        <section className="board report-pitch model-report" aria-label="台本">
+      {phase === 'SUMMARY' && (
+        <section className="board report-pitch model-report" aria-label="要点">
           <div className="report-tabs" role="tablist">
             {view.pitches.map((p, i) => (
               <button
@@ -231,6 +248,17 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onViewMo
             <p className="model-empty">記載なし</p>
           )}
         </section>
+      )}
+
+      {phase === 'REPORT' && (
+        <ReportPhase
+          script={{ version: 1, text: scriptText }}
+          onChange={() => {}}
+          error={null}
+          hasScore={false}
+          onOpenResult={() => {}}
+          readOnly
+        />
       )}
 
       <PhaseSteps active={phase} onSelect={go} readOnly />

@@ -22,6 +22,7 @@ function badInput(): ScoreInput {
     motives: {},
     warrant: null,
     pitches: [{ premise: '', current: '', goal: '', where: '値引き', effect: '' }],
+    script: '',
     finalAnswer: '',
   }
 }

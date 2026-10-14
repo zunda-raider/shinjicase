@@ -31,7 +31,7 @@ export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, subm
           className="btn btn--ghost phase-steps__prev"
           onClick={() => onSelect('REPORT')}
         >
-          ‹ {compact ? '台本へ' : '戻って台本を直す（REPORT）'}
+          ‹ {compact ? 'REPORTへ' : '戻って台本を直す（REPORT）'}
         </button>
         <span className="phase-steps__end-hint">
           {compact ? '再提出は掲示内' : '再提出は上の掲示パネルから'}

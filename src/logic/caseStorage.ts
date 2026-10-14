@@ -1,8 +1,9 @@
 import { DEFAULT_CASE_ID, SAMPLE_CASES, getCase } from '../data/cases'
 import { emptyIntake, parseIntake } from '../data/intake'
 import type { IntakeData } from '../types'
-import type { EvidenceWorkspace, ReportState, WarrantState } from '../types'
-import { createReportState, loadReportState } from './report'
+import type { EvidenceWorkspace, ReportScriptState, SummaryState, WarrantState } from '../types'
+import { createReportScript, loadReportScript } from './report'
+import { createSummaryState, isSummaryState, loadSummaryState } from './summary'
 import { isSuspectState, type SuspectState } from './operation'
 import { createWarrantState, loadWarrantState } from './warrant'
 import { createWorkspace, migrateWorkspace } from './workspace'
@@ -20,13 +21,14 @@ const LEGACY = {
 
 export function caseStorageKey(
   caseId: string,
-  kind: 'evidence' | 'suspects' | 'warrant' | 'report' | 'intake',
+  kind: 'evidence' | 'suspects' | 'warrant' | 'summary' | 'report' | 'intake',
 ) {
   const map = {
     intake: 'intake.v1',
     evidence: 'evidence.v4',
     suspects: 'suspects.v1',
     warrant: 'warrant.v1',
+    summary: 'summary.v1',
     report: 'report.v1',
   } as const
   return `shinjicase.case.${caseId}.${map[kind]}`
@@ -67,7 +69,7 @@ export function saveActiveCaseId(caseId: string) {
   }
 }
 
-/** 旧グローバルキー（旧サンプル事件の時代）と、登録から外した事件のキーを消す */
+/** 旧グローバルキーと、登録から外した事件のキーを消す */
 export function dropStaleKeys() {
   try {
     Object.values(LEGACY).forEach((k) => localStorage.removeItem(k))
@@ -82,13 +84,29 @@ export function dropStaleKeys() {
   }
 }
 
+/** 旧 report.v1（要点カード version:3）→ summary.v1。新 report.v1 は通し台本。 */
+function migrateReportToSummary(caseId: string) {
+  try {
+    const sumKey = caseStorageKey(caseId, 'summary')
+    const repKey = caseStorageKey(caseId, 'report')
+    if (readJson(sumKey)) return
+    const raw = readJson(repKey)
+    if (isSummaryState(raw)) {
+      writeJson(sumKey, raw)
+      localStorage.removeItem(repKey)
+    }
+  } catch {
+    // ignore
+  }
+}
+
 /** 旧グローバルキーを指定事件の名前空間へ一度だけ移す */
 export function migrateLegacyInto(caseId: string) {
   const pairs: [string, string][] = [
     [LEGACY.evidence, caseStorageKey(caseId, 'evidence')],
     [LEGACY.suspects, caseStorageKey(caseId, 'suspects')],
     [LEGACY.warrant, caseStorageKey(caseId, 'warrant')],
-    [LEGACY.report, caseStorageKey(caseId, 'report')],
+    [LEGACY.report, caseStorageKey(caseId, 'summary')],
   ]
   for (const [from, to] of pairs) {
     if (!readJson(to) && readJson(from)) writeJson(to, readJson(from))
@@ -98,6 +116,7 @@ export function migrateLegacyInto(caseId: string) {
   } catch {
     // ignore
   }
+  migrateReportToSummary(caseId)
 }
 
 export function loadCaseWorkspace(caseId: string, metric: string): EvidenceWorkspace {
@@ -127,8 +146,14 @@ export function loadCaseWarrant(caseId: string): WarrantState {
   return loadWarrantState(readJson(caseStorageKey(caseId, 'warrant')))
 }
 
-export function loadCaseReport(caseId: string): ReportState {
-  return loadReportState(readJson(caseStorageKey(caseId, 'report')))
+export function loadCaseSummary(caseId: string): SummaryState {
+  migrateReportToSummary(caseId)
+  return loadSummaryState(readJson(caseStorageKey(caseId, 'summary')))
+}
+
+export function loadCaseReport(caseId: string): ReportScriptState {
+  migrateReportToSummary(caseId)
+  return loadReportScript(readJson(caseStorageKey(caseId, 'report')))
 }
 
 export function freshCaseBundle(metric: string) {
@@ -137,7 +162,8 @@ export function freshCaseBundle(metric: string) {
     pins: [] as string[],
     motives: {} as Record<string, string>,
     warrant: createWarrantState(),
-    report: createReportState(),
+    summary: createSummaryState(),
+    report: createReportScript(),
   }
 }
 

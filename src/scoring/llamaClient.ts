@@ -31,7 +31,7 @@ export function parseModelJson(text: string): LlamaAdjust | null {
 export function buildPrompt(packet: ScorePacket, rule: ScoreResult): string {
   return `あなたはケース面接の採点官です。ルールベース採点の結果を見直し、次のJSONだけを返してください（説明文なし）:
 {"adjust":{"premise":-10..10,"decomposition":-10..10,"focus":-10..10,"measures":-10..10,"speech":-10..10,"evaluation":-10..10},"feedback":{"<id>":"日本語一行"},"comment":"日本語で2〜3文の講評"}
-調整はルール結果で拾えていない質だけに限る。pitches/allMeasures の role（main/sub）と reason は「なぜその施策を選んだか」。メインの理由が効果・実現性・コスト・時間・狙う箱につながっているかも見る。rubric（許容解）があれば系統・許容する分解・不可を基準にする。rubric.challenges（突っ込みパターン）があれば、答えきれていない突っ込みをコメントで1つ指摘する。
+調整はルール結果で拾えていない質だけに限る。pitches は SUMMARY の要点、script は REPORT の1分通し台本。pitches/allMeasures の role（main/sub）と reason は「なぜその施策を選んだか」。メインの理由が効果・実現性・コスト・時間・狙う箱につながっているかも見る。rubric（許容解）があれば系統・許容する分解・不可を基準にする。rubric.challenges（突っ込みパターン）があれば、答えきれていない突っ込みをコメントで1つ指摘する。
 ルール結果:
 ${JSON.stringify(rule.criteria)}
 ケース:

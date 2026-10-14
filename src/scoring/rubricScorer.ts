@@ -4,7 +4,7 @@ import { getModelStudents } from '../data/models'
 import { buildModelView, type ModelView } from '../logic/modelView'
 import { collectMeasures } from '../logic/warrant'
 import { parsePinKey } from '../logic/workspace'
-import type { EvidenceTree, EvidenceWorkspace, IntakeData, ReportState, WarrantState } from '../types'
+import type { EvidenceTree, EvidenceWorkspace, IntakeData, ReportScriptState, SummaryState, WarrantState } from '../types'
 import {
   clamp,
   letterFromTotal,
@@ -48,6 +48,8 @@ export interface ScoreInput {
   motives: Record<string, string>
   warrant: WarrantState | null
   pitches: { measureKey?: string; premise: string; current: string; goal: string; where: string; effect: string }[]
+  /** 1分通し台本（REPORT） */
+  script: string
   finalAnswer: string
 }
 
@@ -60,7 +62,8 @@ export function scoreInputFromPlayer(a: {
   pins: string[]
   motives: Record<string, string>
   warrant: WarrantState
-  report: ReportState
+  summary: SummaryState
+  script: ReportScriptState
 }): ScoreInput {
   const { intake } = a
   const premises: { label: string; value: string }[] = []
@@ -78,7 +81,7 @@ export function scoreInputFromPlayer(a: {
     pins: a.pins,
     motives: a.motives,
     warrant: a.warrant,
-    pitches: a.report.cards.map((c) => ({
+    pitches: a.summary.cards.map((c) => ({
       measureKey: c.measureKey,
       premise: [c.premiseDefinition, c.premiseClient, c.premiseTarget].join('／'),
       current: c.current,
@@ -86,6 +89,7 @@ export function scoreInputFromPlayer(a: {
       where: c.where,
       effect: c.effect,
     })),
+    script: a.script.text,
     finalAnswer: a.warrant.finalAnswer,
   }
 }
@@ -102,6 +106,7 @@ export function scoreInputFromModel(caseId: string, v: ModelView): ScoreInput {
     motives: Object.fromEntries(v.pins.map((k) => [k, v.focus])),
     warrant: null,
     pitches: v.pitches.map((p) => ({ ...p })),
+    script: '',
     finalAnswer: '',
   }
 }
@@ -257,7 +262,7 @@ function rawCriteria(input: ScoreInput): CriterionScore[] {
   }
 
   /* 4 施策 */
-  const allText = [...mtexts, ...input.pitches.flatMap((p) => [p.where, p.effect]), input.finalAnswer].join(' ')
+  const allText = [...mtexts, ...input.pitches.flatMap((p) => [p.where, p.effect]), input.script, input.finalAnswer].join(' ')
   const rejected = (ideal?.rejected ?? []).filter((r) => r.keywords.some((k) => allText.includes(k)))
   const pinsWithMeasure = pins.filter((k) => {
     const { sheetId, nodeId } = parsePinKey(k)
@@ -296,8 +301,8 @@ function rawCriteria(input: ScoreInput): CriterionScore[] {
     const eff = input.pitches.map((p) => p.effect).join(' ')
     if (/\d|＋|%|億|倍/.test(eff)) s += 3
     else if (/により|ことで|につなが|増え|上が|伸ば/.test(eff)) s += 2
-    const lead = (input.finalAnswer.trim() || input.pitches[0]?.where || '').trim()
-    if (lead && !/^(まず|前提|現状|えー|あの)/.test(lead)) s += 4
+    const lead = (input.script.trim() || input.finalAnswer.trim() || input.pitches[0]?.where || '').trim()
+    if (lead && !/^(えー|あの|えっと)/.test(lead)) s += 4
     const fb = !input.pitches.length
       ? '発表する施策の台本を作る'
       : filled < fields.length

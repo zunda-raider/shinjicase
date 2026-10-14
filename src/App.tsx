@@ -20,6 +20,7 @@ import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
 import { ReportPhase } from './components/ReportPhase'
 import { ResultPhase } from './components/ResultPhase'
+import { SummaryPhase } from './components/SummaryPhase'
 import { WarrantPhase } from './components/WarrantPhase'
 import { formatTarget, intakeMetric } from './data/intake'
 import { applySampleSuspects, getCase } from './data/cases'
@@ -40,14 +41,19 @@ import {
 } from './logic/warrant'
 import {
   buildScorePacket,
+  createReportScript,
+  ensureReportScript,
+  setReportScriptText,
+} from './logic/report'
+import {
+  createSummaryState,
   ensureDefaultCards,
-  pruneReportCards,
-  reportMeasures,
+  pruneSummaryCards,
   setActiveCard,
   setFeaturedMeasures,
+  summaryMeasures,
   updatePitchCard,
-  createReportState,
-} from './logic/report'
+} from './logic/summary'
 import { scoreCase } from './scoring/llamaClient'
 import { scoreInputFromPlayer } from './scoring/rubricScorer'
 import type { ScoreResult } from './scoring/types'
@@ -56,6 +62,7 @@ import {
   loadActiveCaseId,
   loadCaseIntake,
   loadCaseReport,
+  loadCaseSummary,
   loadCaseSuspects,
   loadCaseWarrant,
   loadCaseWorkspace,
@@ -89,7 +96,8 @@ import type {
   IntakeData,
   Phase,
   SheetId,
-  ReportState,
+  ReportScriptState,
+  SummaryState,
   WarrantState,
 } from './types'
 import './App.css'
@@ -117,7 +125,8 @@ export default function App() {
     () => loadCaseSuspects(loadActiveCaseId()).motives,
   )
   const [warrant, setWarrant] = useState<WarrantState>(() => loadCaseWarrant(loadActiveCaseId()))
-  const [report, setReport] = useState<ReportState>(() => loadCaseReport(loadActiveCaseId()))
+  const [summary, setSummary] = useState<SummaryState>(() => loadCaseSummary(loadActiveCaseId()))
+  const [report, setReport] = useState<ReportScriptState>(() => loadCaseReport(loadActiveCaseId()))
   const [scoring, setScoring] = useState(false)
   const [score, setScore] = useState<ScoreResult | null>(null)
   const [scoreError, setScoreError] = useState<string | null>(null)
@@ -188,25 +197,39 @@ export default function App() {
   )
   const warrantDone = useMemo(() => isWarrantDone(warrantView, warrantMeasures), [warrantView, warrantMeasures])
 
-  const reportMeasureList = useMemo(
-    () => reportMeasures(ws, activePins, warrantView),
+  const summaryMeasureList = useMemo(
+    () => summaryMeasures(ws, activePins, warrantView),
     [ws, activePins, warrantView],
   )
 
-  const reportView = useMemo(() => {
-    let r = pruneReportCards(report, reportMeasureList)
-    r = ensureDefaultCards(r, reportMeasureList, intake)
+  const summaryView = useMemo(() => {
+    let r = pruneSummaryCards(summary, summaryMeasureList)
+    r = ensureDefaultCards(r, summaryMeasureList, intake)
     return r
-  }, [report, reportMeasureList, intake])
+  }, [summary, summaryMeasureList, intake])
+
+  const reportView = useMemo(
+    () => ensureReportScript(report, summaryView.cards, intake),
+    [report, summaryView.cards, intake],
+  )
+
+  useEffect(() => {
+    writeJson(caseStorageKey(caseId, 'summary'), summaryView)
+  }, [caseId, summaryView])
 
   useEffect(() => {
     writeJson(caseStorageKey(caseId, 'report'), reportView)
   }, [caseId, reportView])
 
   function handleSwapMeasure(index: number, measureKey: string) {
-    const keys = reportView.cards.map((c) => c.measureKey)
+    const keys = summaryView.cards.map((c) => c.measureKey)
     keys[index] = measureKey
-    setReport({ ...setFeaturedMeasures(reportView, keys, reportMeasureList, intake), manual: true })
+    setSummary({ ...setFeaturedMeasures(summaryView, keys, summaryMeasureList, intake), manual: true })
+  }
+
+  function goTitle() {
+    setModel(null)
+    setOnTitle(true)
   }
 
   async function handleSubmitReport(goToResult = true) {
@@ -220,7 +243,8 @@ export default function App() {
         pins: activePins,
         motives,
         warrant: warrantView,
-        report: reportView,
+        summary: summaryView,
+        script: reportView,
         rubric: getIdeal(caseId),
       })
       const input = scoreInputFromPlayer({
@@ -230,7 +254,8 @@ export default function App() {
         pins: activePins,
         motives,
         warrant: warrantView,
-        report: reportView,
+        summary: summaryView,
+        script: reportView,
       })
       const result = await scoreCase(packet, input)
       setScore(result)
@@ -322,7 +347,8 @@ export default function App() {
     setPins(sp)
     setMotives(sm)
     setWarrant(createWarrantState())
-    setReport(createReportState())
+    setSummary(createSummaryState())
+    setReport(createReportScript())
     setScore(null)
     setMode('decompose')
   }
@@ -343,6 +369,7 @@ export default function App() {
     setPins(sus.pins)
     setMotives(sus.motives)
     setWarrant(loadCaseWarrant(nextId))
+    setSummary(loadCaseSummary(nextId))
     setReport(loadCaseReport(nextId))
     setScore(null)
     setScoreError(null)
@@ -368,6 +395,7 @@ export default function App() {
         mode={model.tab}
         initialPhase={model.phase}
         initialStudent={model.student}
+        onTitle={goTitle}
         onViewMode={(m, ph) => {
           if (m === 'NORMAL') {
             setModel(null)
@@ -398,7 +426,7 @@ export default function App() {
           <ModeCycle
             mode="NORMAL"
             available={hasArchive(caseId)}
-            onChange={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'REPORT' : phase })}
+            onChange={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'SUMMARY' : phase })}
           />
         </div>
         <ScoreBoard
@@ -409,7 +437,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
+      <PhaseNav active={phase} onSelect={setPhase} onTitle={goTitle} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={!reportView.text.trim()} scoring={scoring} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 
@@ -469,7 +497,7 @@ export default function App() {
               ...(intake.extras ?? [])
                 .filter((x) => x.value.trim() && isFactLabel(x.label))
                 .map((x) => factCardFromLine(`${x.label}：${x.value}`)),
-              ...[...new Set(reportView.cards.flatMap((c) => c.current.split(/\n|／/)).map((t) => t.trim()).filter(Boolean))].map(factCardFromLine),
+              ...[...new Set(summaryView.cards.flatMap((c) => c.current.split(/\n|／/)).map((t) => t.trim()).filter(Boolean))].map(factCardFromLine),
             ]}
             motives={Object.fromEntries(
               activePins
@@ -544,14 +572,22 @@ export default function App() {
         />
       )}
 
+      {phase === 'SUMMARY' && (
+        <SummaryPhase
+          measures={summaryMeasureList}
+          warrant={warrantView}
+          summary={summaryView}
+          onSwapMeasure={handleSwapMeasure}
+          onSelectTab={(i) => setSummary(setActiveCard(summaryView, i))}
+          onChangeCard={(i, patch) => setSummary(updatePitchCard(summaryView, i, patch))}
+          error={scoreError}
+        />
+      )}
+
       {phase === 'REPORT' && (
         <ReportPhase
-          measures={reportMeasureList}
-          warrant={warrantView}
-          report={reportView}
-          onSwapMeasure={handleSwapMeasure}
-          onSelectTab={(i) => setReport(setActiveCard(reportView, i))}
-          onChangeCard={(i, patch) => setReport(updatePitchCard(reportView, i, patch))}
+          script={reportView}
+          onChange={(text) => setReport(setReportScriptText(reportView, text, summaryView.cards))}
           error={scoreError}
           hasScore={score != null}
           onOpenResult={() => setPhase('RESULT')}
@@ -570,7 +606,7 @@ export default function App() {
       )}
 
 
-      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={reportView.cards.length === 0} scoring={scoring} />
+      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={!reportView.text.trim()} scoring={scoring} />
 
       <footer className="app__footer">
         ケース面接モック · サンプル事件2件 · INTAKE〜RESULT

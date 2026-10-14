@@ -27,16 +27,16 @@
 | フィールド | 中身 | 表示先 |
 |---|---|---|
 | `no`, `title` | 生徒番号・回答の題 | 生徒ピッカー、RESULT の「近い生徒」 |
-| `premises: [label, value][]` | 前提。**前提条件だけ**がメモになる。`現状の数字`/`売上構成`/`収支`などのラベルは自動で現状扱い | INTAKE・黄色メモ・REPORT 前提 |
+| `premises: [label, value][]` | 前提。**前提条件だけ**がメモになる。`現状の数字`/`売上構成`/`収支`などのラベルは自動で現状扱い | INTAKE・黄色メモ・SUMMARY 前提 |
 | `scale`, `target {multiplier, years}` | 規模・目標（原文にあれば） | INTAKE |
-| `current: string[]` | 現状の文 | REPORT 現状 |
+| `current: string[]` | 現状の文 | SUMMARY 現状 |
 | `sheets: [{key, name, tree}]` | 構造化。`node(label, {op:'mul'|'add', children, qa, splitQa})`、`leaves(...)` | EVIDENCE / OPERATION |
 | `focus` | 狙う箱の理由（絞り込み） | 採点の動機 |
 | `pins: [{sheet, label}]` | 狙う箱（最大3） | 赤ピン |
-| `measures: [{name, body, node:{sheet,label}, ghostNode?, role?}]` | 施策。`role:'メイン'` は原文に「最優先」等があるときだけ | OPERATION・REPORT タブ |
+| `measures: [{name, body, node:{sheet,label}, ghostNode?, role?}]` | 施策。`role:'メイン'` は原文に「最優先」等があるときだけ | OPERATION・SUMMARY タブ |
 | `factCards: [{category, text, qa?}]` | 事実・現状の短いカード（≤25字目安）。category は `数字/収支/競合/市場・人口/顧客/強み弱み/課題/その他` | EVIDENCE ツリーの下 |
-| `notes: [{label, text}]` | 試算・KPI・優先順位など。`順番/優先順位/最も不確かな前提` は WARRANT のみ、他は REPORT 効果にも | WARRANT・REPORT |
-| `warrant?: {axes, ratings}` | 原文に評点があるときだけ（施策名 → 各軸の記号） | WARRANT 表（無ければ「記載なし」） |
+| `notes: [{label, text}]` | 試算・KPI・優先順位など。`順番/優先順位/最も不確かな前提` は WARRANT のみ、他は SUMMARY 効果にも。REPORT は SUMMARY から自動生成される通し台本 | WARRANT・SUMMARY・REPORT |
+| `reason?: string` on measure | 「なぜその施策を選んだか」原文があるときだけ | WARRANT 理由 |
 | `ghost?` | GHOST を原文で別に持つ場合、上と同じ形（premises〜notes）。無ければ GOD から〔質疑n〕つきの文・`qa` 要素を除いて GHOST を作る | GHOST |
 | `reach?` | 到達度表があるときだけ | — |
 
