@@ -188,3 +188,8 @@ npm test        # ロジックテスト（CAPTAIN・ツリー・切り口・施�
 - **GHOST** = 許容解（最初の5分で合格圏）、**GOD** = 完全解（質疑で補強した回答。〔質疑n〕をチップ表示）。
 - TITLE の事件カード右上、各フェーズのナビの「ARCHIVE / GOD」から開く（オーバーレイ。閉じても作業はそのまま）。
 - 内容は `src/data/archive/*.md`（現在はまるやま百貨店のみ）。採点用の許容条件は `src/data/ideals/maruyama.ts` で、採点パケットの `rubric` として Llama に渡す。
+
+
+## 模範解答ライブラリ
+
+See [`data/README.md`](data/README.md).

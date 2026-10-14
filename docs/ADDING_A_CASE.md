@@ -1,5 +1,7 @@
 # 事件（ケース）の追加方法
 
+模範解答の **Markdown 正本**は repo ルートの [`data/`](../data/README.md)（カテゴリ × お題 × `answerN.md`）。アプリが読むのは当面 `src/data/*`。新規お題はまず `data/` に置き、ランタイム用に cases / models / archive / ideals を足す。
+
 1つの事件 = 下の 6 ファイル。登録するとそれだけで、TITLE カード・GHOST/GOD・採点・CAPTAIN の突っ込み・OPERATION の既定タブ・事実カードの配置が動きます（共通ルールは自動で適用）。
 
 | # | 何 | ファイル | 必須 |
