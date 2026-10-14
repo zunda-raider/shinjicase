@@ -1,7 +1,7 @@
 # SHINJICASE — ケース面接 × 警察ドラマ風プラクティス（モック）
 
 米国警察捜査ドラマの体裁でケース面接を練習するアプリの **最小モック** です。  
-現在は **INTAKE（事件選択）〜RESULT** が動きます。サンプル事件3件。REPORT で1分台本 → RESULT（西部劇掲示）で採点。
+現在は **INTAKE〜REPORT** が動きます。サンプル事件3件。REPORT で1分台本を提出（RESULT 画面は廃止）。GHOST/GOD は講評を表示。
 
 ## フェーズ対応
 
@@ -12,8 +12,8 @@
 | ⅲ ボトルネック特定 | **EVIDENCE（分解と容疑者）** — 容疑者モード | 動作 | 同じツリーのカードに赤ピン（最大3）。右の欄に動機を書いて CAPTAIN に提出 |
 | ⅳ 打ち手立案 | **OPERATION（逮捕作戦）** | 動作 | 左に番号つきのツリー（容疑者は赤丸）、右に番号ごとの作戦カード。施策は手で入力 |
 | ⅴ 打ち手評価 | **WARRANT（令状請求）** | 動作 | 評価軸を自分で2〜3本入力し、OPERATION の施策に ○△✖。優先順位を自動表示、最終回答（3行） |
-| ⅵ 最終まとめ | **REPORT（最終報告）** | 動作 | 施策ごと（最大2）の1分台本タブ。提出ボタン常時表示 → RESULT |
-| 採点掲示 | **RESULT** | 動作 | 西部劇掲示ボード。構造化／ボトルネック／打ち手／評価の各点＋総合＋講評。戻って直す／再提出 |
+| ⅵ 要点 | **SUMMARY** | 動作 | 施策ごとの前提／現状／ゴール／施策／効果 |
+| ⅶ 最終報告 | **REPORT** | 動作 | 1分通し台本。提出で完了（点数画面なし）。GHOST/GOD は講評 |
 | 面接官の突っ込み | **CAPTAIN（署長）** | 動作 | EVIDENCE／OPERATION／WARRANT のスクリプト＋ REPORT の採点講評 |
 
 フェーズナビ：INTAKE › EVIDENCE（分解と容疑者）› OPERATION › WARRANT（クリックで行き来。起動時は EVIDENCE）  
@@ -104,8 +104,8 @@
 1. WARRANT のあとに **「次のフェーズへ ›」** で REPORT へ。
 2. WARRANT 順位の施策から **最大2つ** にチェック（タブが1枚＝施策1つ）。
 3. 各タブで **前提（定義・依頼人・目標）／現状／ゴール／施策（どこに効くか）／効果** を一目で編集。前提・ゴールは INTAKE から仮置き。
-4. **提出して採点**（常時表示）→ **RESULT** 画面へ。西部劇掲示で各評価項目・総合点・講評を表示。
-5. RESULT から **戻って台本を直す**／**再提出して採点** が可能。
+4. **提出**（REPORT）→ 提出済み。点数の RESULT 画面は出さない。
+5. GHOST/GOD では REPORT の下に **講評**（到達度・合格条件・〔質疑〕抜粋。点数なし）。
 
 ### Llama のつなぎ方
 
@@ -158,7 +158,7 @@ npm test        # ロジックテスト（CAPTAIN・ツリー・切り口・施�
 - `src/components/OperationPhase.tsx` — OPERATION（左：番号つきツリー、右：作戦カード）
 - `src/components/WarrantPhase.tsx` — WARRANT（評価軸・○△✖ マトリクス・優先順位・最終回答）
 - `src/components/ReportPhase.tsx` — REPORT（施策タブの1分台本・提出）
-- `src/components/ResultPhase.tsx` — RESULT（西部劇掲示の採点結果）
+- `src/components/ReviewPanel.tsx` — GHOST/GOD 講評（点数なし）
 - `src/scoring/` — Llama クライアント＋オフライン採点
 - `vite-plugin-score.ts` — 開発サーバの `/api/score`（Ollama / OpenAI 互換）
 - `src/components/TreeThreads.tsx` — ツリーの糸（EVIDENCE と OPERATION で共通）

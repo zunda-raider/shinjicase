@@ -7,10 +7,9 @@ export type ViewMode = 'NORMAL' | 'GHOST' | 'GOD'
 interface Props {
   active: Phase
   onSelect: (phase: Phase) => void
-  /** TITLE へ戻る（進捗は localStorage に残す） */
   onTitle: () => void
   warrantDone?: boolean
-  hasScore?: boolean
+  submitted?: boolean
   onSubmit?: () => void
   submitDisabled?: boolean
   scoring?: boolean
@@ -22,12 +21,13 @@ export function PhaseNav({
   onSelect,
   onTitle,
   warrantDone,
-  hasScore,
+  submitted,
   onSubmit,
   submitDisabled,
   scoring,
   readOnly,
 }: Props) {
+  void warrantDone
   return (
     <nav className="phase-nav" aria-label="捜査フェーズ">
       <div className="phase-nav__items">
@@ -35,7 +35,7 @@ export function PhaseNav({
           タイトル
         </button>
         <span className="phase-nav__sep">›</span>
-        {PHASES.filter((p) => !readOnly || p.id !== 'RESULT').map((p, i) => (
+        {PHASES.map((p, i) => (
           <span key={p.id} className="phase-nav__item-wrap">
             {i > 0 && <span className="phase-nav__sep">›</span>}
             <button
@@ -60,8 +60,7 @@ export function PhaseNav({
         active={active}
         onSelect={onSelect}
         compact
-        warrantDone={warrantDone}
-        hasScore={hasScore}
+        submitted={submitted}
         onSubmit={onSubmit}
         submitDisabled={submitDisabled}
         scoring={scoring}

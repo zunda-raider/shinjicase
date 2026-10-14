@@ -6,39 +6,31 @@ interface Props {
   onSelect: (phase: Phase) => void
   compact?: boolean
   warrantDone?: boolean
-  /** RESULT に点数があるか（ナビヒント用） */
-  hasScore?: boolean
-  /** REPORT の提出（次へボタンの位置に出す） */
+  /** 提出済みか */
+  submitted?: boolean
+  /** REPORT の提出 */
   onSubmit?: () => void
   submitDisabled?: boolean
   scoring?: boolean
-  /** 閲覧モード：提出・RESULT なし */
+  /** 閲覧モード：提出なし */
   readOnly?: boolean
 }
 
 /** 「‹ 前のフェーズ」「次のフェーズへ ›」 */
-export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, submitDisabled, scoring, readOnly }: Props) {
+export function PhaseSteps({
+  active,
+  onSelect,
+  compact,
+  submitted,
+  onSubmit,
+  submitDisabled,
+  scoring,
+  readOnly,
+}: Props) {
   const i = PHASES.findIndex((p) => p.id === active)
   const prev = PHASES[i - 1]
   const next = PHASES[i + 1]
   const short = (label: string) => label.split('（')[0]
-
-  if (active === 'RESULT') {
-    return (
-      <div className={`phase-steps ${compact ? 'is-compact' : ''}`}>
-        <button
-          type="button"
-          className="btn btn--ghost phase-steps__prev"
-          onClick={() => onSelect('REPORT')}
-        >
-          ‹ {compact ? 'REPORTへ' : '戻って台本を直す（REPORT）'}
-        </button>
-        <span className="phase-steps__end-hint">
-          {compact ? '再提出は掲示内' : '再提出は上の掲示パネルから'}
-        </span>
-      </div>
-    )
-  }
 
   if (active === 'REPORT') {
     return (
@@ -54,14 +46,18 @@ export function PhaseSteps({ active, onSelect, compact, hasScore, onSubmit, subm
         ) : (
           <span />
         )}
-        {readOnly ? <span className="phase-steps__end-hint">閲覧のみ</span> : <button
-          type="button"
-          className="btn btn--primary phase-steps__next phase-steps__submit"
-          disabled={submitDisabled || scoring}
-          onClick={() => onSubmit?.()}
-        >
-          {scoring ? '採点中…' : hasScore ? '再提出して採点 ›' : '提出して採点 ›'}
-        </button>}
+        {readOnly ? (
+          <span className="phase-steps__end-hint">閲覧のみ</span>
+        ) : (
+          <button
+            type="button"
+            className="btn btn--primary phase-steps__next phase-steps__submit"
+            disabled={submitDisabled || scoring || submitted}
+            onClick={() => onSubmit?.()}
+          >
+            {scoring ? '処理中…' : submitted ? '提出済み' : '提出'}
+          </button>
+        )}
       </div>
     )
   }

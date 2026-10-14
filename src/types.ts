@@ -27,7 +27,6 @@ export type Phase =
   | 'WARRANT'
   | 'SUMMARY'
   | 'REPORT'
-  | 'RESULT'
 
 export type CaptainState =
   | 'idle'

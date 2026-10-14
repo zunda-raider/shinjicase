@@ -1,4 +1,4 @@
-/** アプリが読むアーカイブ MD。正本は repo ルート `data/02-sales/*/source.md`（ローダー未実装のためここにもコピーを置く）。 */
+/** アプリが読むアーカイブ MD。正本は repo ルート data/02-sales/<slug>/source.md（ローダー未実装のためここにもコピーを置く）。 */
 import conbini from './convenience-store.md?raw'
 import maruyama from './maruyama-department-store.md?raw'
 

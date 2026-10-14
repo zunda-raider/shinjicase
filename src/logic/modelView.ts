@@ -246,7 +246,7 @@ export function buildModelView(base: ModelStudent, mode: ModelMode): ModelView {
   }
 
   return {
-    student: base,
+    student,
     mode,
     initial,
     why,

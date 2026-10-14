@@ -1,17 +1,15 @@
 interface Props {
-  score: number
+  /** 互換のため残す（RESULT 廃止後は表示しない） */
+  score?: number
   reviseBonus: number
   pinnedCount: number
   maxPins: number
 }
 
-export function ScoreBoard({ score, reviseBonus, pinnedCount, maxPins }: Props) {
+/** RESULT 廃止後は点数を出さない。REVISE BONUS と PRIMES のみ。 */
+export function ScoreBoard({ reviseBonus, pinnedCount, maxPins }: Props) {
   return (
     <div className="score-board" aria-live="polite">
-      <div className="score-board__item">
-        <span className="score-board__label">SCORE</span>
-        <span className="score-board__value">{score}</span>
-      </div>
       <div className="score-board__item">
         <span className="score-board__label">REVISE BONUS</span>
         <span className={`score-board__value ${reviseBonus > 0 ? 'is-bonus' : ''}`}>

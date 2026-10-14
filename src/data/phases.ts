@@ -11,7 +11,6 @@ export const PHASES: { id: Phase; label: string; jp: string; stub?: boolean }[] 
   { id: 'WARRANT', label: 'WARRANT', jp: 'ⅴ 打ち手評価（令状請求）' },
   { id: 'SUMMARY', label: 'SUMMARY', jp: 'ⅵ 要点整理（施策タブ）' },
   { id: 'REPORT', label: 'REPORT', jp: 'ⅶ 最終報告（1分台本）' },
-  { id: 'RESULT', label: 'RESULT', jp: '採点結果（西部劇掲示）' },
 ]
 
 export const PHASE_TITLES: Record<Phase, string> = {
@@ -21,5 +20,4 @@ export const PHASE_TITLES: Record<Phase, string> = {
   WARRANT: '令状請求 — WARRANT',
   SUMMARY: '要点整理 — SUMMARY',
   REPORT: '最終報告 — REPORT',
-  RESULT: '採点掲示 — RESULT',
 }

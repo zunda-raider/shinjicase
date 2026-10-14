@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 1 | 事件カード（お題・調書・前提の例・例ツリー） | `src/data/cases.ts` に `SampleCase` を足し、`SAMPLE_CASES` に追加 | 必須 |
 | 2 | 原文（ユーザー作成の Markdown） | `src/data/archive/<file>.md` ＋ `src/data/archive/index.ts` に登録 | GHOST/GOD を出すなら必須（ボタンの有効化に使う） |
-| 3 | 模範生徒 1〜6（GOD＋GHOST） | `src/data/models/<case>/student1..6.ts`、`index.ts`、`src/data/models/index.ts` に登録 | GHOST/GOD・採点のアンカーに必須 |
+| 3 | 模範生徒 1〜6（GOD＋GHOST） | `src/data/models/<case>/student1..6.ts`、`index.ts`、`src/data/models/index.ts` に登録 | GHOST/GOD・採点ユニットテスト・講評のアンカーに必須 |
 | 4 | 採点ルーブリック（許容解・不可・突っ込み） | `src/data/ideals/<case>.ts` ＋ `src/data/ideals/index.ts` に登録 | 採点に必須（無いと汎用採点） |
 
 `caseId` は 1〜4 で同じ文字列にする（例 `conbini`）。保存キーは `shinjicase.case.<caseId>.*`。登録から外した事件の保存データは起動時に自動で消える。
@@ -28,7 +28,7 @@
 
 | フィールド | 中身 | 表示先 |
 |---|---|---|
-| `no`, `title` | 生徒番号・回答の題 | 生徒ピッカー、RESULT の「近い生徒」 |
+| `no`, `title` | 生徒番号・回答の題 | 生徒ピッカー、講評の題 |
 | `premises: [label, value][]` | 前提。**前提条件だけ**がメモになる。`現状の数字`/`売上構成`/`収支`などのラベルは自動で現状扱い | INTAKE・黄色メモ・SUMMARY 前提 |
 | `scale`, `target {multiplier, years}` | 規模・目標（原文にあれば） | INTAKE |
 | `current: string[]` | 現状の文 | SUMMARY 現状 |

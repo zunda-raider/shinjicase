@@ -13,8 +13,11 @@ import { PhaseSteps } from './PhaseSteps'
 import { QaText } from './QaText'
 import { WarrantList } from './WarrantPhase'
 import { ReportPhase } from './ReportPhase'
+import { ReviewPanel } from './ReviewPanel'
 import { SheetTabs } from './SheetTabs'
 import { draftReportScript } from '../logic/report'
+import { buildModelReview } from '../logic/modelReview'
+import { getIdeal } from '../data/ideals'
 
 interface Props {
   caseId: string
@@ -31,7 +34,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onTitle,
   const students = getModelStudents(caseId)
   const [idx, setIdx] = useState(Math.max(0, (initialStudent ?? 1) - 1))
   const [phase, setPhase] = useState<Phase>(
-    initialPhase && initialPhase !== 'RESULT' ? initialPhase : 'INTAKE',
+    initialPhase ?? 'INTAKE',
   )
   // 選んだ切り口は「生徒・モード・OPERATION か否か」が同じ間だけ有効（変わったら既定に戻す）
   const [sheetSel, setSheetSel] = useState<{ ctx: string; id: string } | null>(null)
@@ -67,7 +70,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onTitle,
     if (q) nodeBadges[id] = q
   }
   const pitch = view.pitches[Math.min(pitchIdx, view.pitches.length - 1)]
-  const go = (p: Phase) => setPhase(p === 'RESULT' ? 'REPORT' : p)
+  const go = (p: Phase) => setPhase(p)
   const scriptText = draftReportScript(
     view.pitches.map((p) => ({
       measureKey: p.title,
@@ -81,6 +84,7 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onTitle,
     })),
     view.intake,
   )
+  const review = buildModelReview(view.student, mode, getIdeal(caseId))
 
   return (
     <div className={`app model-mode model-mode--${mode.toLowerCase()}`} data-testid="model-mode">
@@ -251,14 +255,15 @@ export function ModelMode({ caseId, mode, initialPhase, initialStudent, onTitle,
       )}
 
       {phase === 'REPORT' && (
-        <ReportPhase
-          script={{ version: 1, text: scriptText }}
-          onChange={() => {}}
-          error={null}
-          hasScore={false}
-          onOpenResult={() => {}}
-          readOnly
-        />
+        <>
+          <ReportPhase
+            script={{ version: 1, text: scriptText }}
+            onChange={() => {}}
+            error={null}
+            readOnly
+          />
+          <ReviewPanel review={review} mode={mode} />
+        </>
       )}
 
       <PhaseSteps active={phase} onSelect={go} readOnly />

@@ -19,7 +19,6 @@ import { ModeCycle } from './components/ModeCycle'
 import { hasArchive } from './data/archive'
 import { getIdeal } from './data/ideals'
 import { ReportPhase } from './components/ReportPhase'
-import { ResultPhase } from './components/ResultPhase'
 import { SummaryPhase } from './components/SummaryPhase'
 import { WarrantPhase } from './components/WarrantPhase'
 import { formatTarget, intakeMetric } from './data/intake'
@@ -40,7 +39,6 @@ import {
   createWarrantState,
 } from './logic/warrant'
 import {
-  buildScorePacket,
   createReportScript,
   ensureReportScript,
   setReportScriptText,
@@ -54,9 +52,6 @@ import {
   summaryMeasures,
   updatePitchCard,
 } from './logic/summary'
-import { scoreCase } from './scoring/llamaClient'
-import { scoreInputFromPlayer } from './scoring/rubricScorer'
-import type { ScoreResult } from './scoring/types'
 import {
   caseStorageKey,
   loadActiveCaseId,
@@ -127,9 +122,6 @@ export default function App() {
   const [warrant, setWarrant] = useState<WarrantState>(() => loadCaseWarrant(loadActiveCaseId()))
   const [summary, setSummary] = useState<SummaryState>(() => loadCaseSummary(loadActiveCaseId()))
   const [report, setReport] = useState<ReportScriptState>(() => loadCaseReport(loadActiveCaseId()))
-  const [scoring, setScoring] = useState(false)
-  const [score, setScore] = useState<ScoreResult | null>(null)
-  const [scoreError, setScoreError] = useState<string | null>(null)
   const [captainState, setCaptainState] = useState<CaptainState>('idle')
   const [challenge, setChallenge] = useState<ChallengeResult | null>(null)
   const [submittedOnce, setSubmittedOnce] = useState(false)
@@ -189,7 +181,7 @@ export default function App() {
     [activePins, motives],
   )
 
-  const displayScore = lastScored + reviseBonus
+  const displayScore = lastScored + reviseBonus // RESULT 廃止後は掲示せず PRIMES 用に残す
 
   const warrantMeasures = useMemo(
     () => collectMeasures(ws, activePins),
@@ -232,41 +224,11 @@ export default function App() {
     setOnTitle(true)
   }
 
-  async function handleSubmitReport(goToResult = true) {
-    setScoring(true)
-    setScoreError(null)
-    if (goToResult) setPhase('RESULT')
-    try {
-      const packet = buildScorePacket({
-        intake,
-        ws,
-        pins: activePins,
-        motives,
-        warrant: warrantView,
-        summary: summaryView,
-        script: reportView,
-        rubric: getIdeal(caseId),
-      })
-      const input = scoreInputFromPlayer({
-        caseId,
-        intake,
-        ws,
-        pins: activePins,
-        motives,
-        warrant: warrantView,
-        summary: summaryView,
-        script: reportView,
-      })
-      const result = await scoreCase(packet, input)
-      setScore(result)
-    } catch (e) {
-      setScoreError(
-        e instanceof Error ? e.message : '採点に失敗しました。もう一度提出してください。',
-      )
-    } finally {
-      setScoring(false)
-    }
+  function handleSubmitReport() {
+    if (!reportView.text.trim()) return
+    setSubmittedOnce(true)
   }
+
 
 
   /** このシートのノード → 全体のピン番号 */
@@ -349,7 +311,6 @@ export default function App() {
     setWarrant(createWarrantState())
     setSummary(createSummaryState())
     setReport(createReportScript())
-    setScore(null)
     setMode('decompose')
   }
 
@@ -371,8 +332,6 @@ export default function App() {
     setWarrant(loadCaseWarrant(nextId))
     setSummary(loadCaseSummary(nextId))
     setReport(loadCaseReport(nextId))
-    setScore(null)
-    setScoreError(null)
     setChallenge(null)
     setCaptainState('idle')
     setSubmittedOnce(false)
@@ -426,7 +385,7 @@ export default function App() {
           <ModeCycle
             mode="NORMAL"
             available={hasArchive(caseId)}
-            onChange={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase: phase === 'RESULT' ? 'SUMMARY' : phase })}
+            onChange={(m) => m !== 'NORMAL' && setModel({ caseId, tab: m, phase })}
           />
         </div>
         <ScoreBoard
@@ -437,7 +396,7 @@ export default function App() {
         />
       </header>
 
-      <PhaseNav active={phase} onSelect={setPhase} onTitle={goTitle} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={!reportView.text.trim()} scoring={scoring} />
+      <PhaseNav active={phase} onSelect={setPhase} onTitle={goTitle} warrantDone={warrantDone} submitted={submittedOnce} onSubmit={handleSubmitReport} submitDisabled={!reportView.text.trim()} />
 
       {phase !== 'INTAKE' && <IntakeMemos intake={intake} />}
 
@@ -580,7 +539,7 @@ export default function App() {
           onSwapMeasure={handleSwapMeasure}
           onSelectTab={(i) => setSummary(setActiveCard(summaryView, i))}
           onChangeCard={(i, patch) => setSummary(updatePitchCard(summaryView, i, patch))}
-          error={scoreError}
+          error={null}
         />
       )}
 
@@ -588,28 +547,17 @@ export default function App() {
         <ReportPhase
           script={reportView}
           onChange={(text) => setReport(setReportScriptText(reportView, text, summaryView.cards))}
-          error={scoreError}
-          hasScore={score != null}
-          onOpenResult={() => setPhase('RESULT')}
-        />
-      )}
-
-      {phase === 'RESULT' && (
-        <ResultPhase
-          score={score}
-          scoring={scoring}
-          error={scoreError}
-          onBack={() => setPhase('REPORT')}
-          onResubmit={() => void handleSubmitReport(true)}
-          onOpenModel={(no) => setModel({ caseId, tab: 'GOD', phase: 'EVIDENCE', student: no })}
+          error={null}
+          submitted={submittedOnce}
         />
       )}
 
 
-      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} hasScore={score != null} onSubmit={() => void handleSubmitReport(true)} submitDisabled={!reportView.text.trim()} scoring={scoring} />
+
+      <PhaseSteps active={phase} onSelect={setPhase} warrantDone={warrantDone} submitted={submittedOnce} onSubmit={handleSubmitReport} submitDisabled={!reportView.text.trim()} />
 
       <footer className="app__footer">
-        ケース面接モック · サンプル事件2件 · INTAKE〜RESULT
+        ケース面接モック · サンプル事件2件 · INTAKE〜REPORT
       </footer>
     </div>
   )

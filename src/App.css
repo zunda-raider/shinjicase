@@ -3546,3 +3546,41 @@ span.why-row__role { font-weight: 800; text-align: center; }
   border-radius: 3px;
   min-height: 16rem;
 }
+
+/* 講評（GHOST/GOD・点数なし） */
+.review {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #1e1a14;
+  border: 1px solid #6a5a3a;
+  border-radius: 3px;
+  color: #e8d9a8;
+}
+.review__title {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: #f0e0a8;
+}
+.review__lead { margin: 0 0 10px; font-size: 0.85rem; }
+.review__block { margin: 10px 0 0; }
+.review__block h3 {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: #b8a578;
+  font-weight: 800;
+}
+.review__block p, .review__list { margin: 0; font-size: 0.82rem; line-height: 1.45; }
+.review__list { padding-left: 1.1rem; display: grid; gap: 6px; }
+.review__muted { color: #9a8a68; font-weight: 400; }
+.review__ev { margin-top: 2px; color: #e8d9a8; }
+.report-done {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  background: #2a2418;
+  border-left: 4px solid #8a7a55;
+  color: #e8d9a8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
