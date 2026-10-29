@@ -3,6 +3,9 @@ import { leaves, node, type ModelStudent } from '../types'
 export const STUDENT3: ModelStudent = {
   no: 3,
   title: '駅利用者を呼び込み、高単価の購買につなげる',
+  judgment: [
+    '施策Bの理由は中身の一文（賃料目的ではなく…）をそのまま使った',
+  ],
   reach: { pattern: '3 強み・弱みから3方向', axis: '方向性のみ', grade: '△', missing: '比較と結論の前で終了' },
   premises: [
     ['対象', '地方中核都市の駅前にある老舗百貨店'],

@@ -9,6 +9,9 @@ const premises: [string, string][] = [
 export const STUDENT5: ModelStudent = {
   no: 5,
   title: '夕方の住民の買上点数',
+  judgment: [
+    '施策Aの理由は「絞り込み」の文（短期の売上に反映しやすい…）から取った',
+  ],
   premises,
   scale: 'single',
   target: { years: 3 },

@@ -10,6 +10,9 @@ const premises: [string, string][] = [
 export const STUDENT3: ModelStudent = {
   no: 3,
   title: '朝の通勤客を最優先に、住民はスモールスタート',
+  judgment: [
+    '原文の「優先順位」の注記を、施策A（メイン）の理由に統合した',
+  ],
   premises,
   scale: 'single',
   current: [

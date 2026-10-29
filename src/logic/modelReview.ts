@@ -83,13 +83,14 @@ export function buildModelReview(
       evidence: evidenceFor(el.id, st, text),
     })) ?? []
 
+  // 系統：キーワードが最も多く当たる hot_spot（同数は先頭）。1つも当たらなければなし
   let lineage: ModelReview['lineage']
-  if (ideal?.hotSpots?.length) {
-    for (const h of ideal.hotSpots) {
-      if (h.keywords.some((k) => text.includes(k) || st.focus.includes(k))) {
-        lineage = { name: h.name, reason: h.reason }
-        break
-      }
+  let best = 0
+  for (const h of ideal?.hotSpots ?? []) {
+    const hits = h.keywords.filter((k) => text.includes(k)).length
+    if (hits > best) {
+      best = hits
+      lineage = { name: h.name, reason: h.reason }
     }
   }
 

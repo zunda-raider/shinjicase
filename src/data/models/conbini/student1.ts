@@ -28,6 +28,9 @@ const main = node('売上', { op: 'mul', children: leaves('客数', '単価', '�
 export const STUDENT1: ModelStudent = {
   no: 1,
   title: '朝の通勤客の客単価',
+  judgment: [
+    'GHOST の理由は施策の括弧書き（まとめ買いで単価を上げ、差別化にもなる）から取った',
+  ],
   premises: [
     ['対象', '1店舗'],
     ['立地', '都市部の住宅街とオフィスが混在するエリア'],

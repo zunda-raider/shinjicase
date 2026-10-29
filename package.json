@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e:fit": "node e2e/fit.mjs"
+    "e2e:fit": "node e2e/fit.mjs",
+    "data:derive": "vite-node scripts/derive-data.ts"
   },
   "dependencies": {
     "marked": "^18.1.0",

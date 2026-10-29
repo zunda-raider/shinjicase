@@ -110,3 +110,10 @@ export const NEWCASE_IDEAL: IdealAnswer = {
 ```
 
 登録：`src/data/archive/index.ts`（md）、`src/data/models/index.ts`（生徒）、`src/data/ideals/index.ts`（ルーブリック）に `newcase` を1行ずつ。
+
+## data/ の answerN.md（原文＋導出の2部構成）
+
+- `## 原文（ソース）`：ユーザーの原文そのまま（GHOST／GOD をマーカーで囲む）。こちらでは書き換えない。
+- `## 導出（アプリ用）`：`npm run data:derive` が `src/data/models` から自動生成（前提・現状・事実カード・ツリーと種類・ピン・施策と赤番号・メイン/？・理由・SUMMARY・講評マッピング・判断したこと）。
+- 原文に無い判断（注記の移動・理由の出どころなど）は `ModelStudent.judgment: string[]` に書くと「判断したこと」に出る。ラベル短縮・種類の明示・施策の付け先は自動で列挙される。
+- `src/data/library/derive.test.ts` が原文＝`source.md`、導出＝再生成結果 を検査。新しい事件は `src/data/library/derive.ts` の `LIBRARY_CASES` に `{ caseId, dir, layout }` を足す。

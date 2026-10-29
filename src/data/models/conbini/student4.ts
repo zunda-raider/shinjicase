@@ -3,6 +3,11 @@ import { leaves, node, type ModelStudent } from '../types'
 export const STUDENT4: ModelStudent = {
   no: 4,
   title: '駅前店の来店割合',
+  judgment: [
+    'Impact／コストの記号を理由の先頭に「Impact◎・コスト○」の形で置いた',
+    '「最も不確かな前提」は SUMMARY の前提行に入れた（効果には入れない）',
+    'GHOST の理由は施策の括弧書き（〜で来店割合を上げる等）から取った',
+  ],
   premises: [
     ['立地', '駅前'],
     ['営業時間', '24時間営業'],

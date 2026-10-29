@@ -11,6 +11,10 @@ const KEY = 'スーパー・ドラッグストアから取り込む需要'
 export const STUDENT6: ModelStudent = {
   no: 6,
   title: '競合の需要を取り込む',
+  judgment: [
+    '施策Aの理由は「絞り込み」の文（伸びしろが小さい）から取った',
+    'GHOST の理由は「後者を選ぶ（インパクトが大きい）」を言い換えずに短く置いた',
+  ],
   premises,
   scale: 'single',
   target: { years: 3 },

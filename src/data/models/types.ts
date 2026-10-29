@@ -73,6 +73,8 @@ export interface ModelStudent {
   notes: { label: string; text: string }[]
   /** GHOST を原文で別に持つ事件（パターン節）。あればこちらを GHOST に使う */
   ghost?: ModelGhost
+  /** 原文に無い判断のメモ（data/ の導出セクションに出す） */
+  judgment?: string[]
 }
 
 export type ModelGhost = Pick<

@@ -3,6 +3,9 @@ import { leaves, node, type ModelStudent } from '../types'
 export const STUDENT2: ModelStudent = {
   no: 2,
   title: '住宅向け商品と、レジの回転率',
+  judgment: [
+    'GHOST の無人レジの理由はボトルネックの括弧書き（混んでいない店が選ばれる）から取った',
+  ],
   premises: [
     ['対象', '1店舗'],
     ['立地', '都市部の混在エリア。動かせない'],

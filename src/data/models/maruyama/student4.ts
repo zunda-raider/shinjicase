@@ -3,6 +3,9 @@ import { leaves, node, type ModelStudent } from '../types'
 export const STUDENT4: ModelStudent = {
   no: 4,
   title: '平日の朝・昼に地域イベントで来店の目的を作る',
+  judgment: [
+    '原文の「順番」の注記を、施策A（地域コミュニティ向けイベント）の理由に移した',
+  ],
   reach: { pattern: '4 平日の朝・昼にイベント', axis: '客数', grade: '○', missing: '購買への転換が弱い' },
   premises: [
     ['顧客層', '近隣の中高年層が中心。若年層とファミリーは減少'],
